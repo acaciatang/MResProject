@@ -2,8 +2,10 @@
 # Author: Acacia Tang tst116@ic.ac.uk
 # Script: CompileLaTeX.sh
 # Desc: compiles a .tex file to a .pdf
-# Arguments: 1 -> .tex file
+# Arguments: 1 -> .tex filem 2 -> Rscript that makes images
 # Date: 12 Oct 2019
+
+Rscript $2
 
 if [ -z $1 ] #if there is no input of argument
     then
@@ -33,5 +35,8 @@ if [ -z $1 ] #if there is no input of argument
                 rm *.toc
                 rm *.blg
                 rm *.bbl
+                rm *.bcf
+
+                
 fi
 exit
