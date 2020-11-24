@@ -1,0 +1,15 @@
+*~ 
+*.aux
+*.bcf
+*.log
+*.tmp 
+*.pdf 
+*.png 
+*.tif 
+groupwork
+.Rhistory 
+*/Code/.*
+*/Results/*
+!*/Results/.gitkeep
+Test.sqlite
+__pycache__/
