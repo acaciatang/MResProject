@@ -13,3 +13,8 @@ groupwork
 !*/Results/.gitkeep
 Test.sqlite
 __pycache__/
+
+*/.DS_Store
+*.fdb_latexmk
+*.fls
+*.docx
