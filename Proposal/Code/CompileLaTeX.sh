@@ -27,11 +27,16 @@ if [ -z $1 ] #if there is no input of argument
                 ## Cleanup: removes all auxillary files generated, leaving only the pdf.
                 rm *~
                 rm *.aux
+                rm *.bbl
+                rm *.blg
                 rm *.dvi
+                rm *.fdb_latexmk
+                rm *.fls
                 rm *.log
                 rm *.nav
                 rm *.out
                 rm *.snm
+                rm *.synctex.gz
                 rm *.toc
                 rm *.blg
                 rm *.bbl
