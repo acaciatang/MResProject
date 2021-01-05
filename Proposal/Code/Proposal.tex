@@ -4,15 +4,16 @@
 \usepackage{setspace} %set line spacing
 \onehalfspace % 1.5 spacing
 \renewcommand\intextsep{0pt} % no extra separation between figures and text
+\usepackage{enumitem} % to set spacing between list and text
 \renewcommand{\familydefault}{\sfdefault} %set font
 \usepackage{helvet} % latex has no arial, using helvet instead
 \usepackage{titlesec} % to format headings
 \titleformat*{\section}{\normalsize\bfseries} % make section headings same font size as normal text but bold
 \titleformat*{\subsection}{\normalsize\bfseries} % make subsection headings same font size as normal text but bold
 \titlespacing*{\section} % set line spacing for section headings
-{0pt}{1.4ex}{0pt} % left: 0, before: 1.4 times of a line, after: 0 
+{0pt}{0.6ex}{0pt} % left: 0, before: 1.4 times of a line, after: 0 
 \titlespacing*{\subsection} % set line spacing for subsection headings
-{0pt}{0.7ex}{0pt}
+{0pt}{0ex}{0pt}
 \usepackage[style=apa,  citestyle=authoryear, uniquelist=false]{biblatex} % set citation style
 \addbibresource{MResProj.bib} % set bibliography file
 \usepackage{url} % make urls same font as everything else
@@ -56,8 +57,7 @@
       
         This study aims to bridge this gap by studying the impact of microbiome disturbance on \textit{Bombus terrestis} behaviour in a controlled lab environment,
         focusing on the following questions:
-        \begin{enumerate}
-        \itemsep -0.6ex
+        \begin{enumerate}[noitemsep,topsep=0pt]
             \item Does manipulating the gut microbiome change the social network of \textit{B. terrestis}?
             \item What behavioural changes (if any) are observed following administration of antibiotics?
             \item When do changes to social network (if any) occur post-disturbance?
@@ -177,7 +177,7 @@
  
     \section{Budget}
     12 bumblebee colonies £90ea + 1 8TB External Harddrive £200 + Plasticware and consumables £60
-    For a total of £1,340. Dr Graystock will pay for costs that exceed the CMEE budget. 
+    For a total of £1,340. Dr Graystock will pay for costs that exceed the CMEE budget. The harddrive is needed as ~8TB of data comprised of ~20GB individual files is expected. No better alternative is avaliable: OneDrive has a storage limit of 5TB and requires unfeasible online syncing, while research data store is more expensive for long-term storage.
     
  
     \newpage
