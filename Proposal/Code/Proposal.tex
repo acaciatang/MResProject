@@ -1,19 +1,26 @@
-\documentclass[11pt]{article}
-\usepackage{geometry}
+\documentclass[11pt]{article} %set font size,document type
+\usepackage{geometry} %set paper size, orientation, margins
 \geometry{a4paper, portrait, margin=2cm}
-\usepackage{setspace}
-\onehalfspace
-\usepackage{bibtex}
-\bibliographystyle{apalike}
-
-
-%\usepackage{biblatex}
-%\renewcommand{\familydefault}{\sfdefault}
-%\usepackage{font_here}
-\usepackage{graphicx}
-\graphicspath{ .{../Figures/} }
-\usepackage{siunitx}
-\usepackage{float}
+\usepackage{setspace} %set line spacing
+\onehalfspace % 1.5 spacing
+\renewcommand\intextsep{0pt} % no extra separation between figures and text
+\renewcommand{\familydefault}{\sfdefault} %set font
+\usepackage{helvet} % latex has no arial, using helvet instead
+\usepackage{titlesec} % to format headings
+\titleformat*{\section}{\normalsize\bfseries} % make section headings same font size as normal text but bold
+\titleformat*{\subsection}{\normalsize\bfseries} % make subsection headings same font size as normal text but bold
+\titlespacing*{\section} % set line spacing for section headings
+{0pt}{1.4ex}{0pt} % left: 0, before: 1.4 times of a line, after: 0 
+\titlespacing*{\subsection} % set line spacing for subsection headings
+{0pt}{0.7ex}{0pt}
+\usepackage[style=apa,  citestyle=authoryear, uniquelist=false]{biblatex} % set citation style
+\addbibresource{MResProj.bib} % set bibliography file
+\usepackage{url} % make urls same font as everything else
+\urlstyle{same}
+\usepackage{graphicx} % to add figures
+\graphicspath{ .{../Figures/} } % path where figures can be found
+\usepackage{siunitx} % to output units
+\usepackage{float} % control position of figures
  
 \begin{document}
     \begin{titlepage}\centering
@@ -29,177 +36,152 @@
 
     \newpage
     \section{Introduction}
-        The microbiome is a collective term for all the microbes that live within a specific niche.
-        Studies on the microbiomes found on and in organisms have,
-        in particular,
-        revealed their influence on a wide range of host conditions including health, behaviour, and evolution
-        \cite{archie2015social}.
-        One important discovery within this field is termed the "gut-brain axis",
-        through which gut microbiota have been shown to affect host central nervous system,
-        to the extent of being implicated in disease, learning, and communication
-        \cite{archie2015social}.
-        There has been on-going interest in the significance of microbiomes in bees,
-        but past research has been concerned mainly with nutrition, defense against parasites, etc.
-        This research has also been focused on the impact of antibiotics (especially tetracyclines) on honey bees,
-        as these are used to maintain commercial honey hives.
+        Microbes within a niche make up a microbiome.
+        Studying microbiomes on/in organisms led to the discovery of the "gut-brain axis",
+        through which gut microbiota affect the host's central nervous system,
+        with implications in learning and communication
+        \parencite{archie2015social}.
+        Historically, bee microbiome studies focused on agricultural impacts.
         However, beyond economic import,
-        research into the significance of the bee microbiome has the potential to promote bees as a model for the gut-brain axis as it pertains to social behaviour,
-        since bees are eusocial species with well-studied and documented behaviours.
-        Several studies on correlations between microbiome and social behaviour have been reported in bees.
-        The results from these have been promising: while no link was found between microbiome and visual learning
-        \cite{leger2020gut},
-        there is evidence that colony membership is determined by microbiome composition
-        \cite{vernier2020gut},
-        and there are known differences in microbiome between bees with different social roles
-        \cite{jones2018gut}.
-        However, to the author's best knowledge no study has established a direct link between social behaviour and microbiome composition in bees.
+        eusocial bees could be a model for how the gut-brain axis affects social behaviour,
+        as they have well-studied behaviours and a simple yet consistent microbiome.
+        Correlations between the bee microbiome and social behaviour have provided promising insight:
+        while unrelated to visual learning
+        \parencite{leger2020gut},
+        colony membership is influenced by the microbiome
+        \parencite{vernier2020gut},
+        and bees' microbiomes change with social roles
+        \parencite{jones2018gut}.
+        To the author's best knowledge, no study has established a direct link between social behaviour and microbiome composition in bees.
       
-       This study aims to bridge this gap by monitoring the behaviour of \textit{Bombus terrestis} in a controlled lab environment and investigating the impact of microbiome disturbance on their behaviour,
-       focusing on the following questions:
-       \begin{enumerate}
+        This study aims to bridge this gap by studying the impact of microbiome disturbance on \textit{Bombus terrestis} behaviour in a controlled lab environment,
+        focusing on the following questions:
+        \begin{enumerate}
+        \itemsep -0.6ex
             \item Does manipulating the gut microbiome change the social network of \textit{B. terrestis}?
             \item What behavioural changes (if any) are observed following administration of antibiotics?
             \item When do changes to social network (if any) occur post-disturbance?
-            \item When do changes to individual behaviour (if any) occur post-disturbance?
             \item Does manipulating the gut microbiome change the reproductive efficiency of the hive?
-       \end{enumerate}
+        \end{enumerate}
  
     \section{Proposed Methods}
         \subsection{Experimental Set-up}
-            Experimental set-up will be similar to that outlined by Crall et al
-            \cite{crall2018neonicotinoid}.
-            In brief,
-            each study unit will comprise of the nest structure and brood from one colony along with 40 bees from the same colony,
-            each tagged with BEEtag following the methods put forth by Crall et al
-            \cite{crall2015beetag}.
-            The rest of the hive will be left unmanipulated and maintained outside the study unit.
-            Newly emerged bees from the study unit will be removed daily and maintained with the rest of the hive.
-            The experimental set-up will consist of two connected areas:
-            one for nesting and one for foraging.
-            The nesting area will hold the nest structure and brood removed from the colony,
-            and the foraging area will provide access to a nectar reserve,
-            into which antibiotics will be added if treatment involves administration of antibiotics.
+            The set-up used will be similar to that of Crall et al
+            \parencite*{crall2018neonicotinoid}.
+            Each study unit will comprise of the nest structure and brood from one colony along with 30 bees from the same colony,
+            each bee will be tagged with BEEtag, as by Crall et al
+            \parencite*{crall2015beetag}.
+            Excess bees will be maintained outside the study unit.
+            Newly emerged bees from the study unit will be counted and removed daily to be maintained together with the excess bees.
+            The study unit will consist of 2 connected areas (nesting and foraging) monitored by cameras from the top down.
+            Nesting areas hold the nest structure and brood,
+            and the foraging area provides access to a sucrose feeder
+            into which antibiotics will be added, if applicable.
             To quantify the consumption of antibiotics,
-            the nectar reserve will be weighed daily.
+            nectar reserves will be weighed daily.
             The experimental set-up will be put on a 12:12 light:dark cycle.
+            Each day, recording will be done for 23h,
+            and camera batteries will be changed twice, during the last 30 min of the light and dark cycle respectively.
  
         \subsection{Treatments and replicates}
-            Three treatments will be carried out: a no treatment control,
+            3 treatments will be carried out: a no treatment control,
             a control group receiving antibiotic followed by probiotic,
             and an experimental group receiving only antibiotics.
 
-            Four recording periods will be carried out in total.
+            4 recording periods will be carried out.
             During each recording period,
-            two replicates of each treatment/control will be carried out,
-            for a total of 6 hives observed per period.
-
+            a replicate of each treatment/control will be carried out,
+            for a total of 12 hives observed.
             Each recording period will last 15 days.
-            For the first two days, no manipulations will be applied.
-            Then, a spike of 50X diluted penicillin-streptomycin will be administered to antibiotic and antibiotic-probiotic groups on the third day.
-            This dosage was used by Li et al
-            \cite{li2017new},
-            who found a 100\% mortality within 14 days of chronic exposure.
+            No manipulations will be applied for the first 2 days.
+            50 U/mL penicillin-streptomycin will be administered to antibiotic and antibiotic-probiotic groups on day 3.
+            This dosage does not influence bee mortality but is above the minimum inhibitory concentration for most bacteria
+            \parencite{miernik2007influence}.
             After antibiotics are administered,
-            the antibiotic-probiotic control group will receive a daily spray of homogenized guts from bees belonging to the same colony at a concentration of \(10^9\)
-            colony-forming units per mL for the remainder of the recording period.
+            the antibiotic-probiotic control group will receive a daily 5\si{\milli\liter} spray of bee microbes from homogenized guts of 10 excess bees from the same colony.
             
-       \subsection{Data recording}
-            Data for each artificial hive will be recorded using two cameras affixed above the nesting and foraging area.
-            Recording will be done for 23h a day at 4 frames per second, 
-            the frame rate used by Blut et al
-            \cite{blut2017automated}.
-            Two battery changes will be conducted a day,
-            during the last 30 min of the light and dark cycle respectively.
-
-            The number of newly emerged bees will be manually counted and removed from the hive daily.
-        
         \subsection{Sampling individuals for microbiome}
-            To provide a snapshot of the changes in the microbiome, bees will be sampled periodically and washed with 12.5\% bleach solution and water,
-            then flash-frozen and stored at \ang{-80}C for future further analysis,
-            as was the method used by Vernier et al
-            \cite{vernier2020gut}.
-            The sampling will be conducted as below. Before the start of the experiment, one bee from each hive will be frozen.
-            During the ten days of data recording following the antibiotic treatment, one bee from each colony will be removed and frozen.
-            Finally, at the end of the experiment, all bees remaining will be frozen.
-
-            In addition to this, a 100\si{\micro\liter} sample from each gut homogenate to be applied to the antibiotic-probiotic control will be frozen at \ang{-80}C.
+            To assess changes in the microbiome,
+            samples will be taken periodically and stored at \ang{-80}C for future further analysis.
+            The sampling will be conducted as below.
+            Before the start of the study,
+            5 bees from each hive will be frozen.
+            Following antibiotic treatment,
+            swabs of the floor of the nesting area will be taken daily.
+            A 100\si{\micro\liter} sample will also be taken from each gut homogenate to be applied to the antibiotic-probiotic control.
+            Finally, all remaining bees will be frozen at the end of the study.
             
         \subsection{Back-up plan}
-        In the event that the above proposed methods are unable to be carried out,
-        The analysis below will be carried out on recordings of a similar experiment investigating the effect of imidacloprid pesticide on the social behaviour of bees.
+        If the above proposed lab-based work cannot be carried out,
+        the analysis below will be carried out on recordings of a similar study on the effect of imidacloprid on the social behaviour of bees.
  
         \subsection{Analysis}
-            The data collected will be feed into the BEEtag software
-            \cite{crall2015beetag} to identify the position of bees.
+            Data collected will be fed into BEEtag software
+            \parencite{crall2015beetag} to identify bee's positions.
+            Behaviour will be recognised using a machine learning method,
+            derivative of that designed by Blut et al
+            \parencite*{blut2017automated}.
+            Training will focus on nesting behaviours, which were observed with a similar set-up but cannot be distinguished by simple algorithms
+            \parencite{crall2018neonicotinoid}.
+            Parallelly,
+            encounters, foraging, moving and nursing behaviour will be defined as by Crall et al
+            \parencite*{crall2018neonicotinoid}
+            and tallied.
+            The error rates
+            and number of behaviours recognised by these two methods will be compared to determine the more accurate one.
             
-            Behaviour will then be distinguished using machine learning,
-            using a method derivative of that designed by Blut et al
-            \cite{blut2017automated}.
-            In parallel to machine learning,
-            encounters, foraging, moving and nursing behaviour will be defined in the same way as Crall et al
-            \cite{crall2018neonicotinoid},
-            and tallied for each individual.
-            The estimated false positive rate, estimated false negative rate,
-            and number of different behaviours able to be distinguished using these two methods of data analysis will be compared to determine the more accurate method of behaviour determination.
-            
-            Comparisons between colonies will be carried out using network analysis,
-            using descriptive, temporal, and spatial methods reviewed by Pinter et al
-            \cite{pinter2014dynamics}.
-            Since interactions between bumblebees (encounters) have no donor/recipient but the number of interactions between individuals is potentially important, a non-directional weighted network will be generated from the data.
-            In brief, five metrics (density, strength, betweenness range, modularity and diameter) will be compared between hives.
-            Density is the proportion of possible links that are observed
-            \cite{sosa2020network},
-            representing how much of their colony individual bees are interacting with.
+            Comparisons between and within treatments will be done by descriptive and temporal methods of network analysis.
+            Interactions between bumblebees have no donor/recipient but the number of interactions is potentially important,
+            so a non-directional weighted network will be analysed.
+            5 metrics (density, strength, betweenness range, modularity and diameter)
+            will be compared between hives.
+            Density is the proportion of possible links observed
+            \parencite{sosa2020network},
+            showing how much of their colony individual bees are interacting with.
             Strength is the weighted sum of all links
-            \cite{sosa2020network},
-            and represents the strength of interactions between bees.
-            Betweenness is the number of times an individual is found along the shortest link between two other individuals
-            \cite{sosa2020network}.
-            The range of betweenness reflects the robustness of the social structure of the hive.
-            A greater range reflects the presence of individuals which are more important than others for maintaining the social fabric of the hive.
-            Modularity is a measure of clustering within the social network
-            \cite{sosa2020network}.
-            High modularity indicates that the hive is working more as smaller clusters of bees,
-            while low modularity shows that the hive is working more as a whole.
-            Diameter is the longest shortest link between two individuals in a network
-            \cite{sosa2020network},
-            which is a measure of the efficiency of relaying information through the hive.
+            \parencite{sosa2020network},
+            and shows the strength of interactions between bees.
+            Betweenness is the number of times an individual is found on the shortest link between two others
+            \parencite{sosa2020network}.
+            A greater range of betweenness shows some individuals are more important to the social fabric of the hive.
+            Modularity measures clustering within the network
+            \parencite{sosa2020network}.
+            High modularity shows the hive is working more as smaller clusters of bees,
+            as opposed to a whole.
+            Diameter is the longest shortest link in a network
+            \parencite{sosa2020network},
+            and shows the efficiency of relaying information through the hive.
+            To study temporal changes in network structure,
+            data from a hive will be grouped temporally at specific intervals and compared.
+            Appropriate intervals will be found with ORA-LITE
+            \parencite{carley2014ora}.
 
-            To investigate temporal changes in social network structure, a discrete approach will be used,
-            where data from the same hive is grouped temporally at specific intervals and compared.
-            The appropriate intervals will be determined using ORA-LITE
-            \cite{carley2014ora}.
-
-            The presence of change(s) in reproductive output (used to quantify the significance of any changes observed in social behaviour on the hive as a whole, and measured by number of newly emerged bees)
-            and in rate of exhibition of each recorded behaviour within each treatment
+            Differences in reproductive output and rate of recorded behaviours
             will be assessed using repeated-measures ANOVA.
-            To compensate for multiple comparisons, a Bonferroni correction will be applied to the results of ANOVA.
+            Bonferroni correction will be used to compensate for multiple comparisons.
         
     \section{Anticipated outputs and outcomes}
-        Based on a recent study on the influence of microbiome on CHC production and nestmate recognition in honey bees
-        \cite{vernier2020gut},
-        it is expected that antibiotic treatment may alter kin recognition in bumblebees as well,
-        leading to less social behaviour.
-        Potentially, rejection of nestmates
-        \cite{vernier2020gut} may also be observed.
-        No studies to date have carried out any manipulations studies to investigate the effect of microbiome on social behaviour in bees,
-        but studies of the effect of pesticides on honey bee behaviours found an immediate impact followed by a gradual decrease in difference between the treatment and control groups.
-        \cite{crall2018neonicotinoid}.
+        Based on the influence of microbiome on nestmate recognition in honey bees
+        \parencite{vernier2020gut}, we expect bumblebees to demonstrate evidence of a gut-brain axis.
+        Antibiotics may alter kin recognition,
+        causing less social behaviour and a less cohesive social network.
+        Studies on the effect of pesticides find an immediate impact that gradually disappears.
+        \parencite{crall2018neonicotinoid}.
 
  
     \section{Project Timeline}
-        The proposed project timeline is as below:
-        \begin{figure}[H]
-            \includegraphics[width=17cm]{gnatt}
-            \centering
-        \end{figure}
+    \begin{figure}[H]
+        \includegraphics[width=16cm]{gantt}
+        \centering
+    \end{figure}
  
     \section{Budget}
-        [insert lies here]
+    12 bumblebee colonies £90ea + 1 8TB External Harddrive £200 + Plasticware and consumables £60
+    For a total of £1,340. Dr Graystock will pay for costs that exceed the CMEE budget. 
+    
  
     \newpage
-    
-    \bibliography{MResProj}
+    \printbibliography
  
     \newpage
     \centering

@@ -28,7 +28,8 @@ if [ -z $1 ] #if there is no input of argument
                 rm *~
                 rm *.aux
                 rm *.bbl
-                rm *.blg
+                rm *.bcf
+                rm *blg
                 rm *.dvi
                 rm *.fdb_latexmk
                 rm *.fls
@@ -38,10 +39,7 @@ if [ -z $1 ] #if there is no input of argument
                 rm *.snm
                 rm *.synctex.gz
                 rm *.toc
-                rm *.blg
-                rm *.bbl
-                rm *.bcf
-
+                rm *.xml
                 
 fi
 exit
