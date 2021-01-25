@@ -1,0 +1,102 @@
+BEEtag: A Low-Cost, Image-Based Tracking System for the Study of Animal Behavior and Locomotion
+- must cite, is the tagging system we will be using
+- has stuff on how to find tags and program, how they found thresholds for recognition, how to attach tags, 
+- but content is just describing the system
+
+~~~~~~~~~~~~~~~~~
+Neonicotinoid exposure disrupts bumblebee nest behavior, social networks, and thermoregulation
+- very similar methods as what i will be doing except different treatment
+- even analysis
+- can reference how they defined behaviours too
+
+
+~~~~~~~~~~~~~~~~~
+Standard methods for research on Apis mellifera gut symbionts
+- will not be part of project per se but can cite methods to extract DNA from sample for future study
+- alternatively "The gut microbiome defines social group membership in honey bee colonies" just washed and froze the bee
+
+~~~~~~~~~~~~~~~~~
+The honey bee gut microbiota: strategies for study and characterization
+- not that useful
+- basic review of methods used to characterise microbiomes without details
+
+~~~~~~~~~~~~~~~~~
+Pollen reverses decreased lifespan, altered nutritional metabolism and suppressed immunity in honey bees (Apis mellifera) treated
+with antibiotics
+- not that useful
+- found that pollen could reverse the adverse effects of antibiotics, but did not loop at actual community
+- also, they got pollen from field colonies which is not feasible
+- honestly they probably just re-inoculated the bees with whatever was on the pollen
+
+~~~~~~~~~~~~~~~~~
+Antibiotic exposure perturbs the gut microbiota and elevates mortality in honeybees
+- not super useful
+- can cite to demonstrate that people have been looking at the effects of antibiotics on bees
+- but they used a different antibiotic (tetracycline, we use streptomycin)
+- anyway, 4 species out of 8 cores decreased in abundance
+- interestingly, found that G. apicola was higher
+
+~~~~~~~~~~~~~~~~~
+Honeybee microbiome is stabilized in the presence of propolis
+- not helpful
+- added propolis traps which increasing propolis production [is this glue that honey bees (not bumblebees which we are using) make]
+- found that microbiome was different
+- with less propolis, microbiome was different (more Bartonella and Lactobacillus)
+
+~~~~~~~~~~~~~~~~~
+Lactobacillus spp. attenuate antibiotic-induced immune and microbiota dysregulation in honey bees
+- used tetracycline on bees
+- this lowered parasite count but only in larvae
+- lowered stability (microbiomes more different), diversity
+- Lactobacillus treatment after tetracycline led to enrichment of core species, increased expression of immune and anti-oxidant genes
+- G. apicola unaffected by tetracycline
+
+~~~~~~~~~~~~~~~~~
+New evidence showing that the destruction of gut bacteria by antibiotic treatment could increase the honey bee’s vulnerability to Nosema infection
+- used same anti-biotic, can use dosage as reference
+- found that it lowered immune gene expression and increased mortality
+- so we expect the treatment bees to die more
+- all bees dead  by 14 days with treatment group
+- for control, not all dead but most dead by 25 days
+- problem: absolutely no idea what the treatment did to the microbiome
+
+~~~~~~~~~~~~~~~~~
+Applications of machine learning in animal behaviour studies
+- review of use of machine learning in ecology
+- has some stuff that can be used to help choose the right method, if it comes to that
+- probably want supervised learning?
+
+~~~~~~~~~~~~~~~~~
+Novel probiotic approach to counter Paenibacillus larvae infection in honey bees
+- not useful
+- is about use of probiotics to suppress parasite infection
+
+~~~~~~~~~~~~~~~~~
+Are commercial probiotics and prebiotics effective in the treatment and prevention of honeybee nosemosis C?
+- used Lactobacillus rhamnousus and inulin
+- mortality increase with just Lactobacillus rhamnosus or both, regardless of presence of pathogen
+- inulin has no effect
+- they think it might be competition for nutrients with host, or lactic acid fucking up the gut, or probiotics out-competing symbionts
+
+~~~~~~~~~~~~~~~~~
+Tracking All Members of a Honey Bee Colony Over Their Lifetime Using Learned Models of Correspondence
+- not very useful
+- think they just made another version of BEEtag
+- BUT! they have a huge database of bee recordings that maybe I can use
+- BUT BUT! They used honey bees and the set-up is different from what I will have
+
+~~~~~~~~~~~~~~~~~
+Automated computer-based detection of encounter behaviours in groups of honeybees
+- again, honey bees
+- more useful, can cite time they used to train and methods to train computer to learn bee behaviour if I actually do this
+- don't know enough about machine learning to tell if I can just use this system though
+
+~~~~~~~~~~~~~~~~~
+The dynamics of animal social networks: analytical, conceptual, and theoretical advances
+- review of network analysis methods
+- temporal, spatial, and individual variation are of particular interest to this project
+- temporal: methods are given along with R packages that can be used
+- spatial: no current method explicitly for this but can modify existing methods
+- individual: no current method they think removing the individual of interest might work but the bees are dying so uh no
+- unless...?
+

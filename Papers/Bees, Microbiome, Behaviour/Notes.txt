@@ -1,0 +1,49 @@
+The gut microbiome defines social group membership in honey bee colonies
+- is honey bees though
+- microbes make CHC profiles different
+- bees reject others with different microbes aka CHC profiles, but only have the one that makes it. Otherwise just seems 50-50
+	**they used newly emerged bees
+- get difference from older bees
+- G. apicola is the one maybe? Have populational differences between colonies
+
+other references
+- how to treat bees for 16S sequencing
+- antibiotic: they use a mixture of tetracycline, rifampicin, streptomycin
+- treatment was done for 15 days
+
+~~~~~~~~~~~~~~~
+The gut microbiome is associated with behavioural task in honey bees
+- some marginally significant differences found between foragers and nest workers
+
+~~~~~~~~~~~~~~~
+Social behaviour in bees influences the abundance of Sodalis (Enterobacteriaceae) symbionts
+- not that useful
+- found that microbe communities are similar, sociality and mutualistic(? they just say symbiosis) are not correlated
+- but for me: cites papers about how to recognise nascent obligate symbioses, which is pretty cool
+
+The Gut-Brain-Microbiome Axis in Bumble Bees
+- visual assay to determine if no inoculation of microbiome after metamorphosis affected visual learning and memory
+- it didn't
+
+other things
+- some references might be useful? cites papers about nest-mate recognition and learning in other species
+- did not demonstrate effect of treatment on microbiome
+
+~~~~~~~~~~~~~~~
+The different dietary sugars modulate the composition of the gut microbiota in honeybee during overwintering
+- not useful
+- found differences of microbes depending on food but will be giving the same food to all and also will just be following an established protocol
+
+~~~~~~~~~~~~~~~
+Modulation of the honey bee queen microbiota: Effects of early social contact
+- not useful
+- Found that queens had a more variable microbiome when isolated from workers at start of life and that effect persists
+
+~~~~~~~~~~~~~~~
+Social behaviour in bees influences the abundance of Sodalis (Enterobacteriaceae) symbionts
+
+
+~~~~~~~~~~~~~~~
+Microbiota associated with pollen, bee bread, larvae and adults of solitary bee Osmia cornuta (Hymenoptera: Megachilidae)
+- not useful
+- just isolated microbes from different sources related to bees that aren't even the species I'm using
