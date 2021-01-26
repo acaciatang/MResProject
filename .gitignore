@@ -17,12 +17,6 @@
 *.run.xml
 *.synctex.gz
 
-*.mp4
-*.avi
-
-.*
-!.gitignore
-!.gitkeep
 .DS_Store
 */.DS_Store
 .Rhistory 

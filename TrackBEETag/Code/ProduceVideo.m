@@ -1,7 +1,7 @@
 function f = ProduceVideo(file1, file2, out)
-    load(file1) % video[]_reshaped.mat
-    load(file2) % video[]_mov.mat
+    load(file1)
     TD = trackingDataReshaped;
+    mov = VideoReader(file2);
 
     outputMovieName = [out '.avi'];
     outputMovie = 0; %Set to 1 if you want to save a movie, set to 0 if not

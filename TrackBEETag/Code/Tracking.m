@@ -6,7 +6,8 @@
 function f = Tracking(file, out)
     disp(file)
     disp(out)
-    load(file)
+    mov = VideoReader(file); %Make a VideoReader object for the movie
+
     nframes = mov.NumberOfFrames; %how many frames are in the video?
 
 
