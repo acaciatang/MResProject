@@ -17,9 +17,14 @@
 *.run.xml
 *.synctex.gz
 
-.DS_Store
+*.mp4
+*.avi
 
-*.DS_Store
+.*
+!.gitignore
+!.gitkeep
+.DS_Store
+*/.DS_Store
 .Rhistory 
 */Code/.*
 */Results/*
