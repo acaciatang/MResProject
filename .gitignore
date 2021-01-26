@@ -17,6 +17,9 @@
 *.run.xml
 *.synctex.gz
 
+*.mp4
+*.avi
+
 .DS_Store
 */.DS_Store
 .Rhistory 
