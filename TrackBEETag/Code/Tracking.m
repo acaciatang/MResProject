@@ -6,25 +6,13 @@
 function f = Tracking(file, out)
     disp(file)
     disp(out)
-<<<<<<< HEAD
-    load(file)
-    nframes = mov.NumberOfFrames; %how many frames are in the video?
+    mov = VideoReader(file);
+    nframes = mov.NumFrames; %how many frames are in the video?
 
-=======
-    mov = VideoReader(file); %Make a VideoReader object for the movie
-
-    nframes = mov.NumberOfFrames; %how many frames are in the video?
->>>>>>> 126ede04d1a1b475f59cfa8bd9fa31d136a1ca57
 
     %Create empty frame for tracking output
     trackingData = struct();
 
-<<<<<<< HEAD
-=======
-    %Create empty frame for tracking output
-    trackingData = struct();
-
->>>>>>> 126ede04d1a1b475f59cfa8bd9fa31d136a1ca57
     %% Loop across frames
     for i = 1:nframes
         
