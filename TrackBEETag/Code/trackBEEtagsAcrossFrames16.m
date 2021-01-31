@@ -52,6 +52,9 @@ function f = Tracking16(file, out)
         end
     end
     %%
+    %% Save data
+    save([out '.mat'], 'trackingData')
+    
     disp('rearranging data into easier format');
     trackingDataReshaped = struct();
     for i = 1:nframes
@@ -76,7 +79,6 @@ function f = Tracking16(file, out)
 
     %% Save data
     save([out '_reshaped.mat'], 'trackingDataReshaped')
-    save([out '.mat'], 'trackingData')
 
     %% Replay video
     disp('replaying video with tracking data shown');
