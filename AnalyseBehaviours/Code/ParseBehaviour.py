@@ -54,17 +54,17 @@ def Movement(speed):
         return(False)
 
 def Interact(frameNum, dataset):
-    subset = dataset[dataset["frame"] == frameNum]
+    sub = dataset[dataset["frame"] == frameNum]
     #threshold = subset.mean()['1cm']
     threshold = 150
 
-    IDs = numpy.array(subset.index)
+    IDs = numpy.array(sub.index)
 
     for i in IDs:
         for j in IDs[IDs > i]:
             test = math.sqrt((sub.loc[i, 'centroidX']-sub.loc[j, 'centroidX'])**2 + (sub.loc[i, 'centroidY']-sub.loc[j, 'centroidY'])**2)
             if test < threshold:
-                dataset.loc[i, 'interacting'] = j
+                dataset.loc[i, 'interacting'] = dataset.loc[j, 'ID']
 
 def main(argv):
     """ Main entry point of the program """
