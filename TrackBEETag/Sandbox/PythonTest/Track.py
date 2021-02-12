@@ -37,7 +37,7 @@ def wrangle(frameNum): # takes in .mat with tracking data and outputs long-form 
     return(frame) 
 
 def trackframe(filename, frameNum, method): #frameNum starts at 0
-    p = subprocess.Popen(["ffmpeg", "-i", filename, "-vf", "select=eq(n\,"+ str(frameNum) + ")", "-vframes", "1", "out.png"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #p = subprocess.Popen(["ffmpeg", "-i", filename, "-vf", "select=eq(n\,"+ str(frameNum) + ")", "-vframes", "1", "out.png"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     #stdout, stderr = p.communicate()
     #if len(stderr) > 0 :
     #    print("Oh dear, something went wrong! \nSee below:")
@@ -45,7 +45,7 @@ def trackframe(filename, frameNum, method): #frameNum starts at 0
     
     #arguments = ['threshMode', '1', 'bradleyFilterSize', ['15', '15'], 'bradleyThreshold', '3']
     eng = matlab.engine.start_matlab()
-    #eng.addpath('/rds/general/user/tst116/home/TrackBEETag/Code')
+    #eng.addpath('/rds/general/user/tst116/home/TrackBEETag/Code/PythonTest/MatlabKeep')
     eng.addpath('/Users/acacia/Desktop/gitrepo/MResProject/TrackBEETag/Sandbox/PythonTest/MatlabKeep')
     #im = eng.imread('out.png')
     
@@ -54,26 +54,37 @@ def trackframe(filename, frameNum, method): #frameNum starts at 0
     else:
         matOutput = eng.locateCodes_hard(frameNum)
 
-    p2 = subprocess.Popen(["rm", "out.png"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #p2 = subprocess.Popen(["rm", "out.png"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     eng.quit()
 
-    return wrangle(frameNum)
+    return 0
 
 def track(filename, method):
-    #filename = "/Users/acacia/Desktop/gitrepo/MResProject/TrackBEETag/Videos/BEEs.mp4"
+    #filename = "/Users/acacia/Desktop/gitrepo/MResProject/TrackBEETag/Videos/video1.mp4"
     cap = cv2.VideoCapture(filename)
-    nframes = int(cv2.VideoCapture.get(cap, int(cv2.CAP_PROP_FRAME_COUNT) ))
+    #nframes = int(cv2.VideoCapture.get(cap, int(cv2.CAP_PROP_FRAME_COUNT) ))
     #nchunks = nframes//1000
     #chunks = [1 + 1000*i for i in range(nchunks)]
     
     outname = os.path.splitext(os.path.basename(filename))[0] + '.csv'
-
     output = pandas.DataFrame()
-    for i in range(nframes):
-        frameData = trackframe(filename, i, method)
-        pandas.concat([output, frameData], ignore_index=True)
+    i=0
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret == False:
+            break
+        cv2.imwrite("out.png",frame)
+          
+        trackframe(filename, i, method)  
+        frameData = wrangle(i)
+        output = pandas.concat([output, frameData], ignore_index=True)
+        i+=1  
     
+    cap.release()
+    cv2.destroyAllWindows()
+    
+    output = output.rename(columns={0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm'})
     output.to_csv(path_or_buf = outname, na_rep = "NA", index = False)
 
     return 0
