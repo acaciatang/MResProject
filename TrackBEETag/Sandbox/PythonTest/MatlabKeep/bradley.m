@@ -28,7 +28,7 @@ if numvarargs > 3
      'Possible parameters are: (image, [m n], T, padding)');
 end
  
-optargs = {[15 15] 10 'replicate'}; % set defaults
+optargs = {[15 15] 3 'replicate'}; % set defaults
  
 optargs(1:numvarargs) = varargin;   % use memorable variable names
 [window, T, padding] = optargs{:};

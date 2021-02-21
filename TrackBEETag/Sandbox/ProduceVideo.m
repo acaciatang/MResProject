@@ -12,7 +12,7 @@ function f = ProduceVideo(file1, file2, out)
     open(vidObj)
     end
 
-    for i = 1:mov.NumberOfFrames
+    for i = 1:mov.NumFrames
         %%
         im =  read(mov, i);
         imshow(im);

@@ -8,7 +8,7 @@ __version__ = '0.0.1'
 
 #imports
 import sys
-import matlab.engine
+#import matlab.engine
 import subprocess
 import cv2
 import os
@@ -18,7 +18,7 @@ import pandas
 import math
 
 def wrangle(frameNum): # takes in .mat with tracking data and outputs long-form data with the following fields: frame, ID, centroidX, centroidY, dir
-    matOutput = "output" + str(frameNum) + ".mat"
+    matOutput = "output.mat"
     rawdata = scipy.io.loadmat(matOutput)['output']
     frame = pandas.DataFrame()
     for j in range(len(rawdata)):
@@ -36,36 +36,29 @@ def wrangle(frameNum): # takes in .mat with tracking data and outputs long-form 
         frame = frame.append(row, ignore_index=True)
     return(frame) 
 
-def trackframe(filename, frameNum, method): #frameNum starts at 0
-    #p = subprocess.Popen(["ffmpeg", "-i", filename, "-vf", "select=eq(n\,"+ str(frameNum) + ")", "-vframes", "1", "out.png"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    #stdout, stderr = p.communicate()
-    #if len(stderr) > 0 :
-    #    print("Oh dear, something went wrong! \nSee below:")
-    #    print(stderr)
-    
-    #arguments = ['threshMode', '1', 'bradleyFilterSize', ['15', '15'], 'bradleyThreshold', '3']
-    eng = matlab.engine.start_matlab()
-    #eng.addpath('/rds/general/user/tst116/home/TrackBEETag/Code/PythonTest/MatlabKeep')
-    eng.addpath('/Users/acacia/Desktop/gitrepo/MResProject/TrackBEETag/Sandbox/PythonTest/MatlabKeep')
-    #im = eng.imread('out.png')
+def trackframe(frameNum, method): #frameNum starts at 0
+    #eng = matlab.engine.start_matlab()
+    #eng.addpath('/Users/acacia/Desktop/gitrepo/MResProject/TrackBEETag/Sandbox/PythonTest/MatlabKeep')
     
     if method == 16:
-        matOutput = eng.locate16BitCodes_hard(frameNum)
+        #matOutput = eng.locate16BitCodes_hard(frameNum)
+        b1 = subprocess.Popen(["matlab", "<", "$HOME/TrackBEETag/Code/PythonTest/MatlabKeep/locate16BitCodes_hard.m"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        wrangled = wrangle(frameNum)
+        b2 = subprocess.Popen(["mv", "output.mat", "output" + str(frameNum) + ".mat"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
-        matOutput = eng.locateCodes_hard(frameNum)
-
-    #p2 = subprocess.Popen(["rm", "out.png"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    eng.quit()
-
-    return 0
+        #matOutput = eng.locateCodes_hard(frameNum)
+        g1 = subprocess.Popen(["ls"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        b1 = subprocess.Popen(["matlab", "<", "$HOME/TrackBEETag/Code/PythonTest/MatlabKeep/locateCodes_hard.m"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        g2 = subprocess.Popen(["ls"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        wrangled = wrangle(frameNum)
+        b2 = subprocess.Popen(["mv", "output.mat", "output" + str(frameNum) + ".mat"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+    #eng.quit()
+    return wrangled
 
 def track(filename, method):
     #filename = "/Users/acacia/Desktop/gitrepo/MResProject/TrackBEETag/Videos/video1.mp4"
     cap = cv2.VideoCapture(filename)
-    #nframes = int(cv2.VideoCapture.get(cap, int(cv2.CAP_PROP_FRAME_COUNT) ))
-    #nchunks = nframes//1000
-    #chunks = [1 + 1000*i for i in range(nchunks)]
     
     outname = os.path.splitext(os.path.basename(filename))[0] + '.csv'
     output = pandas.DataFrame()
@@ -75,9 +68,8 @@ def track(filename, method):
         if ret == False:
             break
         cv2.imwrite("out.png",frame)
-          
-        trackframe(filename, i, method)  
-        frameData = wrangle(i)
+        
+        frameData = trackframe(i, method)  
         output = pandas.concat([output, frameData], ignore_index=True)
         i+=1  
     

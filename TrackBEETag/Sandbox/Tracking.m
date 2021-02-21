@@ -6,8 +6,8 @@
 function f = Tracking(file, out)
     disp(file)
     disp(out)
-    load(file)
-    nframes = mov.NumberOfFrames; %how many frames are in the video?
+    mov = VideoReader(file);
+    nframes = mov.NumFrames; %how many frames are in the video?
 
 
     %Create empty frame for tracking output

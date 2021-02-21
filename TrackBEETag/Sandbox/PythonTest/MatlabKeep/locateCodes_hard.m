@@ -1,4 +1,3 @@
-function xyz = locateCodes_hard(frameNum)
     %locates optical tags and spits out regionprops info for all tags
     %
     % Input form is locateCodes(im, argv)
@@ -73,47 +72,22 @@ function xyz = locateCodes_hard(frameNum)
     %% Extract optional inputs, do initial image conversion, and display thresholded value
     
     %Check for manually supplied 'vis' value
+    addpath('/rds/general/user/tst116/home/TrackBEETag/Code/PythonTest/MatlabKeep')
     im = imread('out.png');
     vis = 1;
     colMode = 0;
     sizeThresh = 100;
-    threshMode = 1;
-    smP = [15 15];
-    brT = 3;
+    %threshMode = 1;
+    %smP = [15 15];
+    %brT = 3;
     
     % Convert image to red frame if RGB
-    if ndims(im) > 2
-        GRAY = im(:,:,1);
-        %GRAY = rgb2gray(im);
-        
-    elseif ndims(im) == 2
-        GRAY = im;
-    end
-    
-    
+    GRAY = im(:,:,1);
     thresh=graythresh(GRAY);
     
     %Do B-W conversion
-    if threshMode == 0
-        BW = imbinarize(GRAY, thresh);
-    elseif threshMode  == 1
-        BW = bradley(GRAY, smP, brT);
-    end
-    
-    
-    %Display requested image
-    if colMode == 1 && vis == 1
-        imshow(GRAY);
-    end
-    
-    if colMode == 0 && vis== 1
-        imshow(BW);
-    end
-    
-    if colMode == 2 && vis == 1
-        imshow(im);
-    end
-    
+    %argv = {smP, brT};
+    BW = bradley(GRAY);
     
     % Define tracking mode
     trackMode = 0;
@@ -355,25 +329,7 @@ function xyz = locateCodes_hard(frameNum)
         
     end
     
-    
-    %% Optional code visualization
-    
-    if vis==1
-        for i = 1:numel(R)
-            corners = R(i).corners;
-            cornersP = [corners(2,:) ;corners(1,:)];
-            text(R(i).Centroid(1), R(i).Centroid(2), num2str(R(i).number), 'FontSize',30, 'color','r');
-            hold on
-            for bb = 1:4
-                plot(cornersP(1,bb), cornersP(2,bb),'g.', 'MarkerSize', cornerSize)
-            end
-            
-            plot(R(i).frontX, R(i).frontY, 'b.', 'MarkerSize', cornerSize);
-        end
-    end
-    
     output = rmfield(R, {'FilledImage', 'isQuad', 'passCode', 'orientation'});
-    save(['output' num2str(frameNum) '.mat'], 'output');
-    xyz = 0
+    save(['output.mat'], 'output');
     hold off;
     %%
