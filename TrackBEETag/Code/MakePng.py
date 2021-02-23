@@ -15,7 +15,7 @@ import re
 import pandas
 import math
 
-def makepng(filename, method):
+def makepng(filename):
     cap = cv2.VideoCapture(filename)
     
     outname = os.path.splitext(os.path.basename(filename))[0]
@@ -35,7 +35,11 @@ def makepng(filename, method):
 
 def main(argv):
     """ Main entry point of the program """
-    makepng(argv[1], argv[2])
+    iter = os.getenv('PBS_ARRAY_INDEX')
+    files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
+    filename = files[int(iter)-1]
+
+    makepng(filename)
     return 0
 
 if __name__ == "__main__": 

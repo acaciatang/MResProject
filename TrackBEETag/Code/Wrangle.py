@@ -2,7 +2,7 @@
 
 """Processes .mat files."""
 
-__appname__ = 'Wrangle16.py'
+__appname__ = 'Wrangle.py'
 __author__ = 'Acacia Tang (tst116@ic.ac.uk)'
 __version__ = '0.0.1'
 
@@ -58,7 +58,11 @@ def combine(filename):
 
 def main(argv):
     """ Main entry point of the program """
-    combine(argv[1])
+    iter = os.getenv('PBS_ARRAY_INDEX')
+    files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
+    filename = files[int(iter)-1]
+
+    combine(filename)
     return 0
 
 if __name__ == "__main__": 
