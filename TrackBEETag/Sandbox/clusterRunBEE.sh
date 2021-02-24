@@ -34,7 +34,7 @@ echo "Finished!"
 #conda install r
 
 #run in Results
-#qsub -J 1-3 ../Code/clusterRunBEE.sh
+#qsub -J 1-5 clusterTrack.sh
 
 #stop 
 
