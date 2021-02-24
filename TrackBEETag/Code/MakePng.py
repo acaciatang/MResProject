@@ -15,6 +15,14 @@ import re
 import pandas
 import math
 
+def switch(frame, background):
+    
+    return 0
+    
+def window(frame, background, kernel):
+    
+    return 0
+
 def makepng(filename):
     cap = cv2.VideoCapture(filename)
     
@@ -24,7 +32,7 @@ def makepng(filename):
         ret, frame = cap.read()
         if ret == False:
             break
-        cv2.imwrite(outname + "_" + str(i) + ".png",frame)
+        cv2.imwrite(outname + "_" + str(i) + ".png", frame)
         
         i+=1  
     
