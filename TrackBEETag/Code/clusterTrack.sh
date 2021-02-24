@@ -8,7 +8,7 @@ activate trackenv
 
 echo "running code"
 python $HOME/TrackBEETag/Code/MakePng.py
-matlab < $HOME/TrackBEETag/Code/MatlabKeep/locate16BitCodes_hpc.m
+matlab < $HOME/TrackBEETag/Code/locate16BitCodes_hpc.m
 python $HOME/TrackBEETag/Code/Wrangle.py
 
 echo "Done! Moving files"

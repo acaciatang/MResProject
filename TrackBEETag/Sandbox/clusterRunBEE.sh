@@ -36,6 +36,8 @@ echo "Finished!"
 #run in Results
 #qsub -J 1-3 ../Code/clusterRunBEE.sh
 
+#stop 
+
 #check
 #qstat
 

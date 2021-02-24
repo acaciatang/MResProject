@@ -74,7 +74,7 @@
 %Check for manually supplied 'vis' value
 %strcmp, compares strings
 %varagin, an input variable in a function definition statement that allows the function to accept any number of input arguments.
-addpath('/rds/general/user/tst116/home/TrackBEETag/Code/v2PythonTest/MatlabKeep');
+addpath('/rds/general/user/tst116/home/TrackBEETag/Code');
 images = dir('*.png');
 
 for iter = 1:length(images)
