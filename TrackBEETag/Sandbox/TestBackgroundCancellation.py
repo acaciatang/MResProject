@@ -38,7 +38,7 @@ def getbkgd(filename):
     outname = os.path.splitext(os.path.basename(filename))[0]
     frameNum = list(range(0, int(i), math.floor(i/20)))
 
-    referenceFrames = [cap.read() for i in frameNum]
+    referenceFrames = [cap.read()[1] for i in frameNum]
     combined = np.stack(referenceFrames)
     bkgd = np.median(combined, axis=0)
     cv2.imwrite(outname + "_bkgd.png", bkgd)
@@ -76,11 +76,12 @@ def main(argv):
     cap = cv2.VideoCapture(filename)
     outname = os.path.splitext(os.path.basename(filename))[0]
     i=0
+    edited = list()
     while(cap.isOpened()):
         ret , frame = cap.read()
         if ret == False:
             break
-        rmbkgd_pixel(bkgd, frame, outname, i)
+        edited.append(rmbkgd_pixel(bkgd, frame, outname, i))
         #cv2.imwrite(outname + "_" + str(i) + ".png", frame)
         i+=1  
     
