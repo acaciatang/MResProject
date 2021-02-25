@@ -32,9 +32,9 @@ def makepng(filename):
 
 def getbkgd(filename):
     cap = cv2.VideoCapture(filename)
-    global i
+    #global i
     i = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    global outname
+    #global outname
     outname = os.path.splitext(os.path.basename(filename))[0]
     frameNum = list(range(0, int(i), math.floor(i/20)))
 
@@ -58,8 +58,8 @@ def rmbkgd_pixel(bkgd, frame, outname, frameNum):
 
     vpixel = np.vectorize(pixel)
     rmbkgd = vpixel(frame, minimum, maximum)
-    #rmbkgd = rmbkgd[:, :, 2]
-    cv2.imwrite(outname + "_" + str(frameNum) + "_edited.png", rmbkgd)
+    rmbkgd = rmbkgd[:, :, 2]
+    #cv2.imwrite(outname + "_" + str(frameNum) + "_edited.png", rmbkgd)
     return rmbkgd
 
 def main(argv):
@@ -81,9 +81,13 @@ def main(argv):
         ret , frame = cap.read()
         if ret == False:
             break
-        edited.append(rmbkgd_pixel(bkgd, frame, outname, i))
-        #cv2.imwrite(outname + "_" + str(i) + ".png", frame)
-        i+=1  
+        rmbkgd = rmbkgd_pixel(bkgd, frame, outname, i)
+        edited.append(rmbkgd)
+        if i<1000:
+            cv2.imwrite(outname + "_" + str(i) + "_edited.png", rmbkgd)
+            i+=1
+        else:
+            break
     
     cap.release()
     cv2.destroyAllWindows()
