@@ -18,6 +18,7 @@
 *.synctex.gz
 
 *.mp4
+*.MP4
 *.avi
 
 .DS_Store
