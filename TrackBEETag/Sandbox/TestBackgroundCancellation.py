@@ -12,6 +12,7 @@ import cv2
 import os
 import math
 import numpy as np
+import statistics
 
 def makepng(filename):
     cap = cv2.VideoCapture(filename)
@@ -36,16 +37,29 @@ def getbkgd(filename):
     i = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     #global outname
     outname = os.path.splitext(os.path.basename(filename))[0]
-    frameNum = list(range(0, int(i), math.floor(i/20)))
+    frameNum = list(range(0, int(i), 100))
 
     referenceFrames = [cap.read()[1] for i in frameNum]
     combined = np.stack(referenceFrames)
-    bkgd = np.median(combined, axis=0)
+    
+    def mode(a):
+        modes = statistics.multimode(a)
+        return min(modes)
+
+    a = combined.shape[1]
+    b = combined.shape[2]
+    bkgd = np.empty((a, b, 3), dtype='uint8')
+    for i in range(a):
+        for j in range(b):
+            for k in range(3):
+                bkgd[i, j, k] = mode(combined[:, i, j, k])
+
     cv2.imwrite(outname + "_bkgd.png", bkgd)
     return bkgd
 
 def rmbkgd_pixel(bkgd, frame, outname, frameNum):
     #frame = cv2.imread(outname + "_" + str(frameNum) + ".png", -1)
+    #bkgd = cv2.imread(outname + "_bkgd.png", -1)
     thres = 10
     minimum = bkgd - thres
     maximum = bkgd + thres
@@ -59,7 +73,7 @@ def rmbkgd_pixel(bkgd, frame, outname, frameNum):
     vpixel = np.vectorize(pixel)
     rmbkgd = vpixel(frame, minimum, maximum)
     rmbkgd = rmbkgd[:, :, 2]
-    #cv2.imwrite(outname + "_" + str(frameNum) + "_edited.png", rmbkgd)
+    cv2.imwrite(outname + "_" + str(frameNum) + "_edited.png", rmbkgd)
     return rmbkgd
 
 def main(argv):
@@ -72,9 +86,13 @@ def main(argv):
         filename = files[int(iter)-1]
 
     bkgd = getbkgd(filename)
-
+    print("Made background!")
     cap = cv2.VideoCapture(filename)
     outname = os.path.splitext(os.path.basename(filename))[0]
+    
+    fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+    out = cv2.VideoWriter(outname + '_edited.avi',fourcc, 20.0, (640,480))
+    
     i=0
     edited = list()
     while(cap.isOpened()):
@@ -83,13 +101,16 @@ def main(argv):
             break
         rmbkgd = rmbkgd_pixel(bkgd, frame, outname, i)
         edited.append(rmbkgd)
-        if i<1000:
-            cv2.imwrite(outname + "_" + str(i) + "_edited.png", rmbkgd)
-            i+=1
-        else:
-            break
+        #if i<100:
+        cv2.imwrite(outname + "_" + str(i) + "_edited.png", rmbkgd)
+        out.write(rmbkgd)
+        print("Edited frame" + str(i) + "!")
+        #    i+=1
+        #else:
+        #    break
     
     cap.release()
+    out.release()
     cv2.destroyAllWindows()
 
     return i
