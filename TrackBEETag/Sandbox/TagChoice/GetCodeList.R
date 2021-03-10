@@ -33,3 +33,6 @@ robust <- taglist[!(taglist %in% allfinal$Var1)]
 #sort into groups to maximize hamming distance
 robusthamming <- hamming[hamming$X1 %in% robust,]
 robusthamming <- robusthamming[robusthamming$X14 %in% robust,]
+
+write.csv(robusthamming, "robusthamming.csv")
+
