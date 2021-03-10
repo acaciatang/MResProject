@@ -10,6 +10,13 @@ old4 <- read.csv("old/P1000011.csv", header = T)
 hamming <- read.csv("HammingDistance.csv", header = T)
 taglist <- read.csv("16BitTagList.csv", header = F)
 
+#import packages
+require(tidyverse)
+install.packages('tidygraph', dependencies = TRUE)
+install.packages('ggraph', dependencies = TRUE)
+require(tidygraph)
+require(ggraph)
+
 #combine datasets
 bkgdrm <- rbind(bkgdrm1, bkgdrm2)
 old <- rbind(old1, old2, old3, old4)
@@ -36,3 +43,13 @@ robusthamming <- robusthamming[robusthamming$X14 %in% robust,]
 
 write.csv(robusthamming, "robusthamming.csv")
 
+#visualise Hamming Distance
+Nodes <- data.frame(name = as.character(unique(robusthamming$X1)))
+Edges <- data.frame(from = robusthamming$X1, to = robusthamming$X14, weight = robusthamming$X4)
+network <- tbl_graph(nodes = Nodes, edges = Edges)
+
+ggraph(network, layout = "graphopt") + 
+  geom_edge_link(aes(width = weight), colour = "#7e7e7e") +
+  geom_node_point(size = 4, colour = "#ff0000") +
+  geom_node_text(aes(label = name), size = 3, repel = TRUE) +
+  theme_graph()
