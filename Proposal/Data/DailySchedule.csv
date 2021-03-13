@@ -18,10 +18,12 @@ Recording 3,Recording,end,21:00
 "Charge Cameras, Get SD Cards 1","Charge Cameras, Get SD Cards",start,13:30
 "Charge Cameras, Get SD Cards 1","Charge Cameras, Get SD Cards",end,13:40
 "Charge Cameras, Get SD Cards 2","Charge Cameras, Get SD Cards",start,17:15
-"Charge Cameras, Get SD Cards 2","Charge Cameras, Get SD Cards",end,18:15
+"Charge Cameras, Get SD Cards 2","Charge Cameras, Get SD Cards",end,17:25
 "Charge Cameras, Get SD Cards 3","Charge Cameras, Get SD Cards",start,21:00
 "Charge Cameras, Get SD Cards 3","Charge Cameras, Get SD Cards",end,21:10
 Prep Microbiome,Prep Microbiome,start,19:00
 Prep Microbiome,Prep Microbiome,end,20:30
 Spray Microbes,Spray Microbes,start,21:10
 Spray Microbes,Spray Microbes,end,21:20
+Swab nest,Swab nest,start,21:20
+Swab nest,Swab nest,end,21:30
