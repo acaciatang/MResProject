@@ -1,33 +1,27 @@
 ﻿activity,V2,startEnd,time
-Check and Weigh Food,Check and Weigh Food,start,08:30
-Check and Weigh Food,Check and Weigh Food,end,08:40
-Remove Dead Bees,Remove Dead Bees,start,08:40
-Remove Dead Bees,Remove Dead Bees,end,08:50
-Remove New Bees,Remove New Bees,start,08:50
-Remove New Bees,Remove New Bees,end,09:00
-Lights ON,Lights ON,start,09:00
+Clean Tags,Clean Tags,start,08:30
+Clean Tags,Clean Tags,end,12:00
+Check and Weigh Food,Check and Weigh Food,start,12:00
+Check and Weigh Food,Check and Weigh Food,end,12:10
+Remove and Freeze Dead Bees,Remove and Freeze Dead Bees,start,12:20
+Remove and Freeze Dead Bees,Remove and Freeze Dead Bees,end,12:40
+Remove and Mark New Bees,Remove and Mark New Bees,start,12:40
+Remove and Mark New Bees,Remove and Mark New Bees,end,13:00
+Lights ON,Lights ON,start,13:00
 Lights ON,Lights ON,end,21:00
-Recording 1,Recording,start,09:00
-Recording 1,Recording,end,09:30
-Recording 2,Recording,start,15:00
-Recording 2,Recording,end,15:30
+Recording 1,Recording,start,13:00
+Recording 1,Recording,end,13:30
+Recording 2,Recording,start,16:45
+Recording 2,Recording,end,17:15
 Recording 3,Recording,start,20:30
 Recording 3,Recording,end,21:00
-"Charge Cameras, Get SD Cards 1","Charge Cameras, Get SD Cards",start,09:30
-"Charge Cameras, Get SD Cards 1","Charge Cameras, Get SD Cards",end,09:40
-"Charge Cameras, Get SD Cards 2","Charge Cameras, Get SD Cards",start,15:30
-"Charge Cameras, Get SD Cards 2","Charge Cameras, Get SD Cards",end,15:40
+"Charge Cameras, Get SD Cards 1","Charge Cameras, Get SD Cards",start,13:30
+"Charge Cameras, Get SD Cards 1","Charge Cameras, Get SD Cards",end,13:40
+"Charge Cameras, Get SD Cards 2","Charge Cameras, Get SD Cards",start,17:15
+"Charge Cameras, Get SD Cards 2","Charge Cameras, Get SD Cards",end,18:15
 "Charge Cameras, Get SD Cards 3","Charge Cameras, Get SD Cards",start,21:00
 "Charge Cameras, Get SD Cards 3","Charge Cameras, Get SD Cards",end,21:10
-Breakfast,Eat,start,09:40
-Breakfast,Eat,end,10:30
-Lunch,Eat,start,12:00
-Lunch,Eat,end,13:00
-Dinner,Eat,start,19:00
-Dinner,Eat,end,20:30
-Clean Tags 1,Clean Tags,start,10:40
-Clean Tags 1,Clean Tags,end,12:00
-Clean Tags 2,Clean Tags,start,13:00
-Clean Tags 2,Clean Tags,end,15:00
-Prep Microbiome to Spray,Prep Microbiome to Spray,start,15:40
-Prep Microbiome to Spray,Prep Microbiome to Spray,end,19:00
+Prep Microbiome,Prep Microbiome,start,19:00
+Prep Microbiome,Prep Microbiome,end,20:30
+Spray Microbes,Spray Microbes,start,21:10
+Spray Microbes,Spray Microbes,end,21:20
