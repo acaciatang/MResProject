@@ -18,7 +18,7 @@ line_pos <- data.frame(
 df <- merge(x=df, y=line_pos, by="Day", all = TRUE)
 df <- df[with(df, order(Day)), ]
 
-text_offset <- 0.05
+text_offset <- 0.12
 
 df$month_count <- ave(df$Day==df$Day, df$Day, FUN=cumsum)
 df$text_position <- (df$month_count * text_offset * df$direction) + df$position
@@ -38,7 +38,7 @@ p<-p+geom_hline(yintercept=0,
 p<-p+geom_segment(data=df, aes(y=position,yend=0,xend=Day), color='grey', size=0.2)
 
 # Plot scatter points at zero and Day
-p<-p+geom_point(aes(y=0), colour="salmon", size=3)
+p<-p+geom_point(aes(y=0, col=df$colour), size=6)
 
 # Don't show axes, appropriately position legend
 p<-p+theme(axis.line.y=element_blank(),
@@ -53,12 +53,12 @@ p<-p+theme(axis.line.y=element_blank(),
                 )
 
 # Show text for each month
-p<-p+geom_text(data=df, aes(x=Day,y=-0.1,label=Day),size=2.5,vjust=0.5, color='black')
+p<-p+geom_text(data=df, aes(x=Day,y=-0.15,label=Day),size=8,vjust=0.5, color='black')
 
 # Show text for each Task
-p<-p+geom_text(aes(y=df$text_position,label=df$Task),size=2.5)
+p<-p+geom_text(aes(y=text_position,label=Task),size=6)
 
 #print as pdf
-pdf("../Figures/timeline.pdf", 20, 6)
+pdf("../Figures/timeline.pdf", 30, 6)
     p
 graphics.off();

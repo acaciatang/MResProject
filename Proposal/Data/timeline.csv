@@ -1,23 +1,17 @@
-﻿Day,Task,
-1,Hives arrive,
-1,Remove sucrose bladder,
-1,Wait until honey storage is depleted,
-1,Remove and count bees,
-1,Weigh hive,
-2,Tag bees (40 workers + queen per hive),
-3,Remove dead bees,
-4,Remove dead bees,
-4,Take 5 bees from spares to get initial colony,
-4,Remove tagged bees to leave queen + 35 workers,
-5,Buffer,
-6,Recording starts,
-10,Treatment starts,
-17,Last day of treatment,
-21,Last day of recording,
-22,Freeze all bees,
-22,Measure bee size,
-,,
-,,
-,,
-,,
-,,
+﻿Day,Task,colour
+1,Hives arrive,a
+1,Remove sucrose bladder,a
+1,Remove and count bees,a
+1,Weigh hive,a
+2,Tag bees (40 workers + queen per hive),a
+3,Remove dead bees,a
+4,Remove dead bees,a
+4,Take 5 bees from spares to get initial colony,a
+4,Remove tagged bees to leave queen + 35 workers,a
+5,Buffer,b
+6,Recording starts,c
+10,Treatment starts,d
+17,Last day of treatment,d
+21,Last day of recording,c
+22,Freeze all bees,e
+22,Measure bee size,e
