@@ -16,6 +16,7 @@
 *.out
 *.run.xml
 *.synctex.gz
+*.jpg
 
 *.mp4
 *.MP4
