@@ -5,13 +5,13 @@ ntags = 10; %How many rows and columns of tags to print? Will print ntags^2 tags
     
 f = figure('Visible', 'Off');
 set(f, 'Position', [0 0 4000 4000])
-for j = [0 100 200];
+for j = [0 100];
     %%
     for i = 1:(ntags^2)
         
         subplot(ntags,ntags,i);
         
-        num = grand(j + i);
+        num = printtags(j + i);
         
         im = createPrintable16BitCode(num, 20);  
         
@@ -21,6 +21,6 @@ for j = [0 100 200];
     end
     
     % Prints directly to a pdf (and therefore scalable) image of 100 tags
-    % instead of printing to figure
-    print(strcat(num2str(j), '-', num2str(j+99), 'keyed.pdf'), '-dpdf');
+    % instead of printing to figur
+    print(strcat(num2str(j), '-', num2str(j+99), 'keyed.pdf'), '-dpdf', '-bestfit');
 end
