@@ -16,8 +16,8 @@ python $HOME/TrackBEETag/Code/Wrangle.py
 
 date
 echo "Done! Moving files"
-mv *.mat $HOME/TrackBEETag/Results # move files to folder
-mv *.csv $HOME/TrackBEETag/Results
+mv *.mat $HOME/TrackBEETag/RmBkgdResults # move files to folder
+mv *.csv $HOME/TrackBEETag/RmBkgdResults
 echo "Finished!"
 date
 #done
