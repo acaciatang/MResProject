@@ -15,12 +15,22 @@ import numpy as np
 import statistics
 
 def getbkgd(filename):
+    referenceFrames = list()
     cap = cv2.VideoCapture(filename)
-    i = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
     outname = os.path.splitext(os.path.basename(filename))[0]
-    frameNum = list(range(0, int(i), 100))
-
-    referenceFrames = [cap.read()[1] for i in frameNum]
+    i=0
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret == False:
+            break
+        if i % 100 == 0:
+            referenceFrames.append(frame)
+        i+=1  
+    
+    cap.release()
+    cv2.destroyAllWindows()
+    
     combined = np.stack(referenceFrames)
     
     def mode(a):
@@ -65,6 +75,7 @@ def main(argv):
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
 
+    print (filename)
     bkgd = getbkgd(filename)
     print("Made background!")
     
@@ -93,7 +104,7 @@ def main(argv):
     #out.release()
     cv2.destroyAllWindows()
 
-    return i
+    return 0
 
 if __name__ == "__main__": 
     """Makes sure the "main" function is called from command line"""  

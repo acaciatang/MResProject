@@ -15,14 +15,6 @@ import re
 import pandas
 import math
 
-def switch(frame, background):
-    
-    return 0
-    
-def window(frame, background, kernel):
-    
-    return 0
-
 def makepng(filename):
     cap = cv2.VideoCapture(filename)
     
@@ -33,7 +25,7 @@ def makepng(filename):
         if ret == False:
             break
         cv2.imwrite(outname + "_" + str(i) + ".png", frame)
-        
+        print("Printed frame" + str(i) + "!")
         i+=1  
     
     cap.release()
@@ -43,10 +35,13 @@ def makepng(filename):
 
 def main(argv):
     """ Main entry point of the program """
-    iter = os.getenv('PBS_ARRAY_INDEX')
-    files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
-    filename = files[int(iter)-1]
-
+    if len(sys.argv) == 2:
+        filename = argv[1]
+    else:
+        iter = os.getenv('PBS_ARRAY_INDEX')
+        files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
+        filename = files[int(iter)-1]
+    print (filename)
     makepng(filename)
     return 0
 

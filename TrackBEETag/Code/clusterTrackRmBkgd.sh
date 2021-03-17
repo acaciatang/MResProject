@@ -7,19 +7,17 @@ module load matlab/R2020b # allows matlab to be run with HPC
 module load anaconda3/personal
 source activate trackenv
 
-which python
-
-echo "running code"
 date
-python $HOME/TrackBEETag/Code/MakePng.py
+echo "running code"
+#python $HOME/TrackBEETag/Code/MakePng.py
+python $HOME/TrackBEETag/Code/RemoveBackground.py
 matlab < $HOME/TrackBEETag/Code/locate16BitCodes_hpc.m
 python $HOME/TrackBEETag/Code/Wrangle.py
-date
 
+date
 echo "Done! Moving files"
 mv *.mat $HOME/TrackBEETag/Results # move files to folder
 mv *.csv $HOME/TrackBEETag/Results
 echo "Finished!"
 date
-
 #done
