@@ -63,7 +63,7 @@ def chooseColour(i, gap):
     g = int(colour[3] + colour[4], 16)
     b = int(colour[5] + colour[6], 16)
     return (b, g, r) #opencv uses BGR for some god forsaken reason
-
+# FRAME = cv2.imread('hive_999.png',1)
 def drawLines(allCoors, FRAME, frameNum):
     frame = FRAME
     for i in range(len(allCoors)): #for each ID
@@ -71,15 +71,15 @@ def drawLines(allCoors, FRAME, frameNum):
         # choose colour 
         color = chooseColour(i, math.floor(148/len(allCoors)))
         # Line thickness of 2 px 
-        thickness = 2
+        thickness = 3
 
         df = allCoors[i]
         df = df[df['frame'] <= frameNum]
         if df.empty == True:
             continue
-        if frameNum  not in df['frame']:
+        if frameNum != df['frame'].max():
             continue
-        test = frameNum - int(df[df['frame'] == frameNum].index.values)
+        test = frameNum - int(df[df['frame'] == frameNum].index.values[0]) #fix me in Wrangled: should only have one entry per ID per frame!
         df['gap'] = [int(df['frame'][i] - i) != test for i in df.index]
         df = df.loc[df['gap'] == False, ["centroidX", "centroidY"]]
 
@@ -88,7 +88,7 @@ def drawLines(allCoors, FRAME, frameNum):
         
         drew = cv2.polylines(frame, np.int32([pts]), isClosed, color, thickness)
         frame = drew
-    drew = frame
+
     return drew
 def main(argv):
     """ Main entry point of the program """
@@ -99,7 +99,7 @@ def main(argv):
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
     outname = os.path.splitext(os.path.basename(filename))[0]
-    coordinates = getallCoor(outname + ".csv", thres = 50)
+    allCoors = getallCoor(outname + ".csv", thres = 50)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object
@@ -111,7 +111,7 @@ def main(argv):
         ret, frame = cap.read()
         if ret == False:
                 break
-        frame = drawLines(coordinates, frame, i)
+        frame = drawLines(allCoors, frame, i)
 
         # write the flipped frame
         out.write(frame)
