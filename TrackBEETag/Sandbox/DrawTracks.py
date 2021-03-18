@@ -19,6 +19,7 @@ import math
 def getCoor(csvfile, id, thres = 60):
     all = pd.read_csv(csvfile)
     subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]]
+    subset
     missing = pd.DataFrame()
     subset = subset.append(missing, ignore_index=True)
 
@@ -63,7 +64,8 @@ def chooseColour(i, gap):
     b = int(colour[5] + colour[6], 16)
     return (b, g, r) #opencv uses BGR for some god forsaken reason
 
-def drawLines(allCoors, frame, frameNum):
+def drawLines(allCoors, FRAME, frameNum):
+    frame = FRAME
     for i in range(len(allCoors)): #for each ID
         isClosed = False #don't want polygon
         # choose colour 
@@ -73,7 +75,11 @@ def drawLines(allCoors, frame, frameNum):
 
         df = allCoors[i]
         df = df[df['frame'] <= frameNum]
-        test = frameNum - int(df[df['frame'] ==frameNum].index.values)
+        if df.empty == True:
+            continue
+        if frameNum  not in df['frame']:
+            continue
+        test = frameNum - int(df[df['frame'] == frameNum].index.values)
         df['gap'] = [int(df['frame'][i] - i) != test for i in df.index]
         df = df.loc[df['gap'] == False, ["centroidX", "centroidY"]]
 
@@ -82,9 +88,8 @@ def drawLines(allCoors, frame, frameNum):
         
         drew = cv2.polylines(frame, np.int32([pts]), isClosed, color, thickness)
         frame = drew
-
+    drew = frame
     return drew
-
 def main(argv):
     """ Main entry point of the program """
     if len(sys.argv) == 2:
@@ -110,7 +115,7 @@ def main(argv):
 
         # write the flipped frame
         out.write(frame)
-
+        print("Wrote frame " + str(i))
         #cv2.imshow('frame',frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
