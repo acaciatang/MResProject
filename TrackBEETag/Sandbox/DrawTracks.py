@@ -12,8 +12,79 @@ import cv2
 import os
 import numpy as np
 import pandas as pd
+import matplotlib.colors as mcolors
+import math
 
 #code
+def getCoor(csvfile, id, thres = 60):
+    all = pd.read_csv(csvfile)
+    subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]]
+    missing = pd.DataFrame()
+    subset = subset.append(missing, ignore_index=True)
+
+    for i in range(subset.shape[0]-1):
+        if 1 < subset["frame"][i+1] - subset["frame"][i] < thres:
+            addframe = pd.DataFrame(list(range(subset["frame"][i] + 1, subset["frame"][i+1])))
+            addX = pd.DataFrame([subset["centroidX"][i] + (subset["centroidX"][i+1]-subset["centroidX"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
+            addY = pd.DataFrame([subset["centroidY"][i] + (subset["centroidY"][i+1]-subset["centroidY"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
+            addme = pd.concat([addframe, addX, addY], axis = 1)
+            missing = missing.append(addme)
+
+    if missing.shape != (0, 0):
+        missing.columns = ["frame", "centroidX", "centroidY"]    
+        subset = subset.append(missing)
+        subset = subset.sort_values("frame", axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last', ignore_index=True)
+
+    test1 = subset.frame.diff().fillna(thres*10) == 1
+    test2 = abs(subset.frame.diff(periods=-1).fillna(thres*10)) == 1
+    keep = test1|test2
+    subset['keep'] = keep
+    subset = subset.loc[subset["keep"] == True, ["frame", "centroidX", "centroidY"]]
+    
+    return subset.reset_index(drop=True)
+
+def getallCoor(csvfile, thres = 60):
+    all = pd.read_csv(csvfile)
+    IDs = pd.DataFrame(all["ID"].value_counts())
+    IDs.reset_index(level=0, inplace=True)
+    IDs.columns = ["ID", "freq"]
+    IDs = IDs.loc[IDs["freq"] > 1, ["ID", "freq"]]
+    allCoors = [getCoor(csvfile, i, thres = 50) for i in IDs["ID"]]
+    allCoors = [i for i in allCoors if i.empty == False]
+    
+    return allCoors
+
+def chooseColour(i, gap):
+    fullList = mcolors.CSS4_COLORS
+    names = list(fullList.keys())
+    colour = [i for i in fullList[names[i*gap]]]
+    r = int(colour[1] + colour[2], 16)
+    g = int(colour[3] + colour[4], 16)
+    b = int(colour[5] + colour[6], 16)
+    return (b, g, r) #opencv uses BGR for some god forsaken reason
+
+def drawLines(allCoors, frame, frameNum):
+    for i in range(len(allCoors)): #for each ID
+        isClosed = False #don't want polygon
+        # choose colour 
+        color = chooseColour(i, math.floor(148/len(allCoors)))
+        # Line thickness of 2 px 
+        thickness = 2
+
+        df = allCoors[i]
+        df = df[df['frame'] <= frameNum]
+        test = frameNum - int(df[df['frame'] ==frameNum].index.values)
+        df['gap'] = [int(df['frame'][i] - i) != test for i in df.index]
+        df = df.loc[df['gap'] == False, ["centroidX", "centroidY"]]
+
+        pts = np.array(df)
+        pts = pts.reshape((-1, 1, 2)) 
+        
+        drew = cv2.polylines(frame, np.int32([pts]), isClosed, color, thickness)
+        frame = drew
+
+    return drew
+
 def main(argv):
     """ Main entry point of the program """
     if len(sys.argv) == 2:
@@ -22,31 +93,30 @@ def main(argv):
         iter = os.getenv('PBS_ARRAY_INDEX')
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
-
-    bkgd = getbkgd(filename)
-    print("Made background!")
-    cap = cv2.VideoCapture(filename)
     outname = os.path.splitext(os.path.basename(filename))[0]
+    coordinates = getallCoor(outname + ".csv", thres = 50)
     
-    fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-    out = cv2.VideoWriter(outname + '_edited.avi',fourcc, 20.0, (640,480))
-    
+    cap = cv2.VideoCapture(filename)
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(outname + "_tracks.mp4", fourcc, 20.0, (3840,2160))
+
     i=0
-    edited = list()
     while(cap.isOpened()):
-        ret , frame = cap.read()
+        ret, frame = cap.read()
         if ret == False:
+                break
+        frame = drawLines(coordinates, frame, i)
+
+        # write the flipped frame
+        out.write(frame)
+
+        #cv2.imshow('frame',frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        rmbkgd = rmbkgd_pixel(bkgd, frame, outname, i)
-        edited.append(rmbkgd)
-        #if i<100:
-        cv2.imwrite(outname + "_" + str(i) + "_edited.png", rmbkgd)
-        out.write(rmbkgd)
-        print("Edited frame" + str(i) + "!")
-        i+=1
-        #else:
-        #    break
-    
+        i+=1 
+
+    # Release everything if job is finished
     cap.release()
     out.release()
     cv2.destroyAllWindows()
