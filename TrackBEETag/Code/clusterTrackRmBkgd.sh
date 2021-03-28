@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -lwalltime=48:00:00
-#PBS -lselect=1:ncpus=8:mem=96gb
+#PBS -lselect=1:ncpus=8:ompthreads=8:mem=96gb
 date
 echo "loading modules"
 module load matlab/R2020b # allows matlab to be run with HPC

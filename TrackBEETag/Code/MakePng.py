@@ -17,12 +17,17 @@ import math
 
 def makepng(filename):
     cap = cv2.VideoCapture(filename)
-    
     outname = os.path.splitext(os.path.basename(filename))[0]
+
+    if not cap.isOpened():
+        print("Hold on the file didn't open let's try opening it")
+        cap.open()
+
     i=0
     while(cap.isOpened()):
         ret, frame = cap.read()
         if ret == False:
+            print("The end.")
             break
         cv2.imwrite(outname + "_" + str(i) + ".png", frame)
         print("Printed frame" + str(i) + "!")
