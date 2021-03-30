@@ -16,7 +16,8 @@ import matplotlib.colors as mcolors
 import math
 
 #code
-def getCoor(csvfile, id, thres = 60):
+def getCoor(outname, id, thres):
+    csvfile = outname + ".csv"
     all = pd.read_csv(csvfile)
     subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]]
     subset
@@ -42,15 +43,19 @@ def getCoor(csvfile, id, thres = 60):
     subset['keep'] = keep
     subset = subset.loc[subset["keep"] == True, ["frame", "centroidX", "centroidY"]]
     
+    if len(subset.index) > 0:
+        subset.to_csv(path_or_buf = outname + "_" + str(id) + ".csv", na_rep = "NA", index = False)
+    
     return subset.reset_index(drop=True)
 
-def getallCoor(csvfile, thres = 60):
+def getallCoor(outname, thres):
+    csvfile = outname + ".csv"
     all = pd.read_csv(csvfile)
     IDs = pd.DataFrame(all["ID"].value_counts())
     IDs.reset_index(level=0, inplace=True)
     IDs.columns = ["ID", "freq"]
     IDs = IDs.loc[IDs["freq"] > 1, ["ID", "freq"]]
-    allCoors = [getCoor(csvfile, i, thres = 50) for i in IDs["ID"]]
+    allCoors = [getCoor(outname, i, thres) for i in IDs["ID"]]
     allCoors = [i for i in allCoors if i.empty == False]
     
     return allCoors
@@ -75,21 +80,23 @@ def drawLines(allCoors, FRAME, frameNum):
 
         df = allCoors[i]
         df = df[df['frame'] <= frameNum]
-        if df.empty == True:
+        if df.empty == True: # nothing to plot in this frame because there is nothing
+            drew = frame
             continue
-        if frameNum != df['frame'].max():
+        if frameNum != df['frame'].max(): # nothing to plot in this frame because tracks have stopped before this frame
+            drew = frame
             continue
         test = frameNum - int(df[df['frame'] == frameNum].index.values[0]) #fix me in Wrangled: should only have one entry per ID per frame!
         df['gap'] = [int(df['frame'][i] - i) != test for i in df.index]
-        df = df.loc[df['gap'] == False, ["centroidX", "centroidY"]]
+        toPlot = df.loc[df['gap'] == False, ["centroidX", "centroidY"]]
 
-        pts = np.array(df)
+        pts = np.array(toPlot)
         pts = pts.reshape((-1, 1, 2)) 
         
         drew = cv2.polylines(frame, np.int32([pts]), isClosed, color, thickness)
         frame = drew
-
     return drew
+
 def main(argv):
     """ Main entry point of the program """
     if len(sys.argv) == 2:
@@ -98,8 +105,9 @@ def main(argv):
         iter = os.getenv('PBS_ARRAY_INDEX')
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
+    
     outname = os.path.splitext(os.path.basename(filename))[0]
-    allCoors = getallCoor(outname + ".csv", thres = 50)
+    allCoors = getallCoor(outname, thres = 2)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object
