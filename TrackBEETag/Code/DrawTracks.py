@@ -68,7 +68,7 @@ def chooseColour(i, gap):
     g = int(colour[3] + colour[4], 16)
     b = int(colour[5] + colour[6], 16)
     return (b, g, r) #opencv uses BGR for some god forsaken reason
-# FRAME = cv2.imread('hive_999.png',1)
+
 def drawLines(allCoors, FRAME, frameNum):
     frame = FRAME
     for i in range(len(allCoors)): #for each ID
@@ -107,7 +107,7 @@ def main(argv):
         filename = files[int(iter)-1]
     
     outname = os.path.splitext(os.path.basename(filename))[0]
-    allCoors = getallCoor(outname, thres = 2)
+    allCoors = getallCoor(outname, thres = 10)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object

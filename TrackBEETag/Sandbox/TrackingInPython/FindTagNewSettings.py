@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-
-"""Seperates video into pngs of frames."""
-
-__appname__ = 'RemoveBackground.py'
-__author__ = 'Acacia Tang (tst116@ic.ac.uk)'
-__version__ = '0.0.1'
-
 #imports
 import sys
 import av
@@ -14,15 +6,6 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-def makepng(filename):
-    container = av.open(filename)
-    outname = os.path.splitext(os.path.basename(filename))[0]
-
-    for frame in container.decode(video=0):
-        print("Printed frame " + str('%06d' % frame.index) + "!")
-        frame.to_image().save(outname + '_%06d.png' % frame.index)
-
-def findtags(image):
 #load image and get name of output file
 image = "P1000027.png"
 img = cv2.imread(image, 1)
@@ -39,23 +22,21 @@ bkgd = cv2.cvtColor(R,cv2.COLOR_GRAY2RGB)
 bw = cv2.adaptiveThreshold(G,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
 cv2.imwrite(outname + "_BW.png", bw)
 
-# find blobs
-contours, hierarchy = cv2.findContours(bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-contour = cv2.drawContours(bkgd, contours, -1, (125,255,255), 1) # all contours plotted in green
-cv2.imwrite(outname + "_BWopencontour.png", contour)
+#removes white points that are noise, which gives us nice black borders of blobs
+kernel = np.ones((4,4),np.uint8) # larger kernel preserves less details, use for images that are less well-lit
+opening = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel)
+cv2.imwrite(outname + "_BWopen.png", opening)
 
-# redraw contours
-epsilon = [0.025*cv2.arcLength(blob,True) for blob in contours]
-redraw = [cv2.approxPolyDP(contours[i],epsilon[i],True) for i in range(len(contours))]
-nonzero = [blob for blob in redraw if cv2.contourArea(blob) > 0]
-redrawed = cv2.drawContours(bkgd, nonzero, -1, (0,255,0), 1)
-cv2.imwrite(outname + "_BWredraw.png", redrawed)
+# find blobs
+contours, hierarchy = cv2.findContours(opening,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#contour = cv2.drawContours(bkgd, contours, -1, (255,255,255), 1) # all contours plotted in green
+#cv2.imwrite(outname + "_BWopencontour.png", contour)
 
 # filter for blobs of right size
-areas = [cv2.contourArea(blob) for blob in redrawed]
-rightsized = [redrawed[i] for i in range(len(areas)) if 1000 < areas[i] < 5000]
-rightsize = cv2.drawContours(bkgd, rightsized, -1, (255,0,0), 1) # contours of right size plotted in blue
-cv2.imwrite(outname + "_BWrightsize.png", rightsize)
+areas = [cv2.contourArea(blob) for blob in contours]
+rightsized = [contours[i] for i in range(len(areas)) if 1000 < areas[i] < 5000]
+#rightsize = cv2.drawContours(bkgd, rightsized, -1, (255,0,0), 1) # contours of right size plotted in blue
+#cv2.imwrite(outname + "_BWrightsize.png", rightsize)
 rightsizeareas = [cv2.contourArea(blob) for blob in rightsized]
 
 # filter for blobs of right perimeter to area ratio
@@ -66,6 +47,12 @@ rightratios = [rightsized[i] for i in range(len(rightsized)) if ratio[i] < 0.3] 
 #cv2.imwrite(outname + "_BWrightratio.png", rightratio)
 #rightones = [cv2.arcLength(blob,True)/cv2.contourArea(blob) for blob in rightratios]
 
+# redraw contours
+epsilon = [0.025*cv2.arcLength(blob,True) for blob in rightratios]
+redraw = [cv2.approxPolyDP(rightratios[i],epsilon[i],True) for i in range(len(rightratios))]
+nonzero = [blob for blob in redraw if cv2.contourArea(blob) > 0]
+#redrawed = cv2.drawContours(bkgd, nonzero, -1, (0,255,0), 1)
+#cv2.imwrite(outname + "_BWredraw.png", redrawed)
 
 # filter for blobs of right perimeter to area ratio
 ratio2 = [cv2.arcLength(blob,True)/cv2.contourArea(blob) for blob in nonzero]
@@ -125,21 +112,20 @@ ranges = []
 for pts in rect:
     #crop out potential tag region
     cropped = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
-    #cv2.imwrite(outname + "_cropped" + str(i) + ".png", cropped)
+    cv2.imwrite(outname + "_cropped" + str(i) + ".png", cropped)
     ranges.append(cropped.max() - cropped.min())
     if cropped.max() - cropped.min() > 125:
-#locate corners
-img = cv2.imread('simple.jpg')
-gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        #locate corners
+        croppedbkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
+                
+        corners = cv2.goodFeaturesToTrack(cropped,25,0.01,10)
+        corners = np.int0(corners)
 
-corners = cv2.goodFeaturesToTrack(gray,25,0.01,10)
-corners = np.int0(corners)
-
-for i in corners:
-    x,y = i.ravel()
-    cv2.circle(img,(x,y),3,255,-1)
-
-plt.imshow(img),plt.show()
+        for j in corners:
+            x,y = j.ravel()
+            cv2.circle(croppedbkgd,(x,y),3,255,-1)
+                
+        cv2.imwrite(outname + "_corners" + str(i) + ".png", croppedbkgd)
 
 #find squares: edges based on corners
 #largest square that is white = tag
@@ -151,43 +137,25 @@ plt.imshow(img),plt.show()
 #output as pandas series
 
 
-######################
-#turn into black and white
-#bw = cv2.adaptiveThreshold(cropped,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
-bw = cv2.adaptiveThreshold(cropped,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
-cv2.imwrite(outname + "_bw" + str(i) + ".png", bw)
-#open
-kernel = np.ones((2,2),np.uint8) # larger kernel preserves less details
-opened = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel)
-#cv2.imwrite(outname + "_BWopen" + str(i) + ".png", opened)
-#draw contours
-bkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
-contours, hierarchy = cv2.findContours(bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#contour = cv2.drawContours(bkgd, contours, -1, (0,0,255), 1) # all contours plotted in green
-#cv2.imwrite(outname + "_BWopencontour" + str(i) + ".png", contour)
+        ######################
+        #turn into black and white
+        #bw = cv2.adaptiveThreshold(cropped,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
+        bw = cv2.adaptiveThreshold(cropped,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
+        cv2.imwrite(outname + "_bw" + str(i) + ".png", bw)
+        #open
+        kernel = np.ones((2,2),np.uint8) # larger kernel preserves less details
+        opened = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel)
+        #cv2.imwrite(outname + "_BWopen" + str(i) + ".png", opened)
+        #draw contours
+        bkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
+        contours, hierarchy = cv2.findContours(bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        #contour = cv2.drawContours(bkgd, contours, -1, (0,0,255), 1) # all contours plotted in green
+        #cv2.imwrite(outname + "_BWopencontour" + str(i) + ".png", contour)
 
-epsilon = [0.05*cv2.arcLength(blob,True) for blob in contours]
-redraw = [cv2.approxPolyDP(contours[i],epsilon[i],True) for i in range(len(contours))]
-nonzero = [blob for blob in redraw if cv2.contourArea(blob) > 0]
-redrawed = cv2.drawContours(bkgd, nonzero, -1, (0,255,0), 1)
-cv2.imwrite(outname + "_BWredraw" + str(i) + ".png", redrawed)
+        epsilon = [0.05*cv2.arcLength(blob,True) for blob in contours]
+        redraw = [cv2.approxPolyDP(contours[i],epsilon[i],True) for i in range(len(contours))]
+        nonzero = [blob for blob in redraw if cv2.contourArea(blob) > 0]
+        redrawed = cv2.drawContours(bkgd, nonzero, -1, (0,255,0), 1)
+        cv2.imwrite(outname + "_BWredraw" + str(i) + ".png", redrawed)
 #######################        
     i = i+1
-    
-
-def main(argv):
-    """ Main entry point of the program """
-    if len(sys.argv) == 2:
-        filename = argv[1]
-    else:
-        iter = os.getenv('PBS_ARRAY_INDEX')
-        files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
-        filename = files[int(iter)-1]
-    print (filename)
-    makepng(filename)
-    return 0
-
-if __name__ == "__main__": 
-    """Makes sure the "main" function is called from command line"""  
-    status = main(sys.argv)
-    sys.exit(status)

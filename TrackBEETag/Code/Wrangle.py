@@ -37,6 +37,26 @@ def wrangle(filename, frameNum): # takes in .mat with tracking data and outputs 
             frame = frame.append(row, ignore_index=True)
         return(frame) 
 
+def wranglewhole(matfile): # takes in .mat with tracking data and outputs long-form data with the following fields: frame, ID, centroidX, centroidY, dir
+     rawdata = scipy.io.loadmat(matfile)['trackingData'][0]
+     iter = int(re.findall(r"\d+", matfile)[-1]) -1
+     output = pandas.DataFrame()
+     for i in range(len(rawdata)):
+         for j in range(len(rawdata[i][0])):
+             frame = i + 1
+             ID = rawdata[i][0][j][0][3][0][0]
+             centroidX = rawdata[i][0][j][0][1][0][0] #topleft is 0, 0
+             centroidY = rawdata[i][0][j][0][1][0][1]
+             frontX = rawdata[i][0][j][0][4][0][0]
+             frontY = rawdata[i][0][j][0][5][0][0]
+             dir = math.degrees(math.atan2(frontX-centroidX, centroidY-frontY)) #pointing up = 0
+             OneCM = math.sqrt((centroidX - frontX)**2 + (centroidY - frontY)**2)/0.15
+             if dir < 0:
+                 dir = 360+dir
+             output = output.append([(frame, ID, centroidX, centroidY, dir, OneCM)], ignore_index=True)
+     output = output.rename(columns={0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm'})
+     return(output)
+
 def combine(filename):
     cap = cv2.VideoCapture(filename)
     

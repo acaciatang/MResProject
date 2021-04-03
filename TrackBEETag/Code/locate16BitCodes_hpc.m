@@ -122,7 +122,7 @@ for iter = 1:length(images)
         
         % Define optional list of valid codes
         listMode = 0;
-            validTagList = [];
+            validTagList = [74 104 162 237 346 365 413 437 467 525 596 720 881 1077 1127 1203 1368 1486 1555 1730 1797 2107 2340 2418 2512 2607 2897 2954 3380 3443];
 
     %Marker size for displaying green points on potential tag corners
     cornerSize = 10;

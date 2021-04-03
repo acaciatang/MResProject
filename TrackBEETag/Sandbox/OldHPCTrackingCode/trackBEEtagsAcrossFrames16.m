@@ -56,7 +56,7 @@ function f = Tracking16(file, out)
     %% Save data
     save([out '.mat'], 'trackingData')
     
-    disp('rearranging data into easier format');
+    disp('rearranging data into e asier format');
     trackingDataReshaped = struct();
     for i = 1:nframes
         %%
