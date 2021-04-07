@@ -2,6 +2,17 @@
 
 %codelist = [109 36]; %List of codes in the frame - supplying this is more robust, but optional
 codelist = [74 104 162 237 346 365 413 437 467 525 596 720 881 1077 1127 1203 1368 1486 1555 1730 1797 2107 2340 2418 2512 2607 2897 2954 3380 3443];
+addpath('/Users/acacia/Desktop/antibiotics/A');
+files = dir('*.MP4');
+
+for iter = 1:length(files)
+    file = files(iter);
+    file = file.name;
+    [pathstr, name, ext] = fileparts(file);
+    out = name;
+    Tracking16(file, out)
+end
+
 function f = Tracking16(file, out)
     disp(file)
     disp(out)
