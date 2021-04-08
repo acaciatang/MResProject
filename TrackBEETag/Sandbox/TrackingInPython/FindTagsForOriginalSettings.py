@@ -172,8 +172,13 @@ for a in range(len(rect)):
                 test = [min(abs(Closest[x] - x), abs(len(approx) - abs(Closest[x] - x))) for x in range(len(approx))]
                 
                 #do not remove anything if points are too far away
+<<<<<<< HEAD
                 if DisToClosest[test.index(max(test))] > MaxForRemoval:
                     Closest[test.index(max(test))] = 1
+=======
+                #if DisToClosest[test.index(max(test))] > MaxForRemoval:
+                #    Closest[test.index(max(test))] = 1
+>>>>>>> f39812d99256355b195d8ae8b41288fc43662153
                 #check that all points are closest to adjacent points
                 if max(test) == 1:
                     break

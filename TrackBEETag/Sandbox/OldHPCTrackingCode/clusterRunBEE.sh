@@ -34,7 +34,7 @@ echo "Finished!"
 #conda install r
 
 #run in Results
-#qsub -J 1-5 clusterTrack.sh
+#qsub -J 1-20 clusterTrackPyAV.sh
 
 #stop 
 

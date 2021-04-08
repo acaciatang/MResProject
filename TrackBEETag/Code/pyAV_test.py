@@ -24,15 +24,15 @@ def makepng(filename):
 
 def findtags(image):
 #load image and get name of output file
-image = "P1000027.png"
-img = cv2.imread(image, 1)
+image = 'G6_5.png'
+img = cv2.imread('G6_5.png', 1)
 outname = os.path.splitext(os.path.basename(image))[0]
 
 # separate out colour channels of interest: green (G) for detecting tags, red (R) for recognizing tags
 G = img[:, :, 1]
-#cv2.imwrite(outname + "_G.png", G)
+cv2.imwrite(outname + "_G.png", G)
 R = img[:, :, 2]
-#cv2.imwrite(outname + "_R.png", R)
+cv2.imwrite(outname + "_R.png", R)
 bkgd = cv2.cvtColor(R,cv2.COLOR_GRAY2RGB)
 
 #convert to black and white with mean thresholding
