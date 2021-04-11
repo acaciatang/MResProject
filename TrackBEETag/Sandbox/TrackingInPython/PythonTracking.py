@@ -14,6 +14,8 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 import math
+from matching.games import HospitalResident
+import pandas as pd
 
 def makepng(filename):
     container = av.open(filename)
@@ -131,8 +133,7 @@ def drawmodel(id):
     model = np.rot90(model) # I don't know why the matlab cod is like this but it is
     return model*255
     
-def IDTags(pts, R, outname):
-for a in range(len(potentialTags)):
+def drawtag(pts, R, outname):
     pts = potentialTags[a]
     #crop out potential tag region
     cropped = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
@@ -165,14 +166,15 @@ for a in range(len(potentialTags)):
     POIs = [int(not (pts[2]-1 in p or 0 in p or pts[3]-1 in p)) for p in points]
     
     if sum(POIs) < 2:
-        continue
-        #drawlargest = cv2.drawContours(croppedbkgd, largest, -1, (125,255,255), 1)
-        #cv2.imwrite(outname + "_largest" + str(a) + ".png", drawlargest)
+        return None
+    drawlargest = cv2.drawContours(croppedbkgd, largest, -1, (125,255,255), 1)
+    cv2.imwrite(outname + "_largest" + str(a) + ".png", drawlargest)
     arclen = cv2.arcLength(largest, True)
     approx = cv2.approxPolyDP(largest, arclen*0.01, True)
-    #polygon = cv2.drawContours(croppedbkgd, [approx], -1, (0,0,255), 1, cv2.LINE_AA)
-    #cv2.imwrite(outname + "_polygon" + str(a) + ".png", polygon)
+    polygon = cv2.drawContours(croppedbkgd, [approx], -1, (0,0,255), 1, cv2.LINE_AA)
+    cv2.imwrite(outname + "_polygon" + str(a) + ".png", polygon)
     test = [0]
+#this is bad, try something else
     while True:
         edgeLens = [math.sqrt((approx[i-1][0][0]-approx[i][0][0])**2 + (approx[i-1][0][1]-approx[i][0][1])**2) for i in range(len(approx))]
         Closest = []
@@ -221,24 +223,26 @@ for a in range(len(potentialTags)):
         print(removeIndex)
 
     if len(approx) < 2:
-        continue
+        return None
     
     moments = cv2.moments(approx)
     centroidX = int(moments['m10']/moments['m00'])
     centroidY = int(moments['m01']/moments['m00'])
-    #polygon = cv2.drawContours(croppedbkgd, [approx], -1, (0,255,0), 1, cv2.LINE_AA)
-    #cv2.imwrite(outname + "_polygon2_" + str(a) + ".png", polygon)
+    polygon = cv2.drawContours(croppedbkgd, [approx], -1, (0,255,0), 1, cv2.LINE_AA)
+    cv2.imwrite(outname + "_polygon2_" + str(a) + ".png", polygon)
 
 # do transformation better, this is completely unacceptable
+# find mean within polygon and transform, better yet do ozru on polygon
+# alternatively but this is harder, find parallel lines
 
     #####get centroid here before transformation!######
 
-    #transform polygon
+    #transform polygon (polygon should just be the tag)
     vertexes = extremepoints(approx)
     edges = [math.sqrt((vertexes[p-1][0]-vertexes[p][0])**2 + (vertexes[p-1][1]-vertexes[p][1])**2) for p in range(len(vertexes))]
     edge = math.floor(min(edges))
     if edge < 6:
-        continue
+        return None
     OneCM = edge/0.3 ##measure the tag to get actual edge length!!
     rows,cols = cropped.shape
     pts1 = np.float32([leftmost,rightmost,bottommost])
@@ -278,24 +282,18 @@ for a in range(len(potentialTags)):
             if TAG2[i,j] == 0 and (i == 0 or j == 0):
                 TAG2[i,j] = 255
     #cv2.imwrite(outname + "_bwTAG2_" + str(a) + ".png", TAG2)
+    return [TAG1, TAG2]
 
+def scoretag(TAG, taglist):
     #ID tag
-    configs = [TAG1, np.rot90(TAG1, 1), np.rot90(TAG1, 2), np.rot90(TAG1, 3), TAG2, np.rot90(TAG2, 1), np.rot90(TAG2, 2), np.rot90(TAG2, 3)]
-    if image[0] == 'A':
-        taglist = [68,118,137,173,289,304,325,365,392,420,437,512,559,596,613,666,696,765,862,1112,1150,1203,1492,1730,1966,2091,2327,2452,2511,2932,2992,3067,3261,3360,3415,3486,3570,3757,3908,4015]
-    elif image[0] == 'B':
-        taglist = [31,46,69,180,222,270,311,330,347,393,542,598,651,697,792,813,875,1062,1085,1227,1368,1498,1585,1744,1947,1986,2056,2158,2281,2332,2460,2607,2835,2908,2945,3375,3488,3581,3783,3926]
-    elif image[0] == 'C':
-        taglist = [52,74,103,209,226,274,312,331,354,427,455,476,502,544,574,601,634,661,707,770,881,1028,1180,1243,1465,1543,1704,1759,1797,1846,1896,2118,2340,2413,2488,2523,2915,2954,3134,3832]
-    elif image[0] == 'D':
-        taglist = [59,75,104,135,211,237,324,341,361,377,413,436,456,510,579,609,637,664,681,720,802,844,910,1074,1104,1403,1620,1718,1799,1903,2006,2072,2192,2242,2355,2856,2880,3163,3358,3388]
-
+    configs = [TAG, np.rot90(TAG, 1), np.rot90(TAG, 2), np.rot90(TAG, 3)]
+    
     models = [drawmodel(id) for id in taglist]
     difference = [np.sum(abs(m - config))/255 for config in configs for m in models]
     test = min(difference)
     bestfits = [d for d in difference if d == test]
     if len(bestfits) > 1:
-        continue
+        return None
     #if test >= 4:
     #    continue
     id = taglist[difference.index(min(difference))%40]
@@ -304,8 +302,39 @@ for a in range(len(potentialTags)):
 
     #return [(frameNum, ID, centroidX, centroidY, dir, OneCM)]
 
-# add script to figure out best fit given that other tags may have taken the match with a higher score
-# try choosing based on best fit to each model?
+def matchtags(df): #df is a pandas dataframe that contains the scores, columns are models, rows are tags
+    # generate dictionary of preferences based on all tags returned from IDTags
+    modellist = df.columns.to_list()
+    taglist = df.index.to_list()
+    
+    modelscores = [df[x].values.tolist() for x in df.columns]
+    modelranks = [[sorted(model).index(i) for i in model]for model in modelscores]
+    tagsranked = []
+    for i in range(len(modellist)):
+        zipped_lists = zip(modelranks[i], taglist)
+        sorted_zipped_lists = sorted(zipped_lists)
+        tagsranked.append([element for _, element in sorted_zipped_lists])
+    modelpref = {modellist[i]: tagsranked[i] for i in range(len(modellist))}
+
+    tagscores = df.values.tolist()
+    tagranks = [[sorted(tag).index(i) for i in tag]for tag in tagscores]
+    modelsranked = []
+    for i in range(len(taglist)):
+        zipped_lists = zip(tagranks[i], modellist)
+        sorted_zipped_lists = sorted(zipped_lists)
+        modelsranked.append([element for _, element in sorted_zipped_lists])
+    tagpref = {taglist[i]: modelsranked[i] for i in range(len(taglist))}
+
+    capacity = {h: 1 for h in modelpref}
+
+    game = HospitalResident.create_from_dictionaries(tagpref, modelpref, capacity)
+    solution = game.solve()
+    assert game.check_validity(), "No valid solution"
+    assert game.check_stability(), "No stable solution"
+
+    matched_tags = [str(tags) for _, [tags] in solution.items()]
+    unmatched_tags = set(tagpref.keys()) - set(matched_tags)
+    print("Tags without matches: ", unmatched_tags)
 
 def main(argv):
     """ Main entry point of the program """
@@ -316,6 +345,17 @@ def main(argv):
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
     print (filename)
+    
+    if image[0] == 'A':
+        taglist = [68,118,137,173,289,304,325,365,392,420,437,512,559,596,613,666,696,765,862,1112,1150,1203,1492,1730,1966,2091,2327,2452,2511,2932,2992,3067,3261,3360,3415,3486,3570,3757,3908,4015]
+    elif image[0] == 'B':
+        taglist = [31,46,69,180,222,270,311,330,347,393,542,598,651,697,792,813,875,1062,1085,1227,1368,1498,1585,1744,1947,1986,2056,2158,2281,2332,2460,2607,2835,2908,2945,3375,3488,3581,3783,3926]
+    elif image[0] == 'C':
+        taglist = [52,74,103,209,226,274,312,331,354,427,455,476,502,544,574,601,634,661,707,770,881,1028,1180,1243,1465,1543,1704,1759,1797,1846,1896,2118,2340,2413,2488,2523,2915,2954,3134,3832]
+    elif image[0] == 'D':
+        taglist = [59,75,104,135,211,237,324,341,361,377,413,436,456,510,579,609,637,664,681,720,802,844,910,1074,1104,1403,1620,1718,1799,1903,2006,2072,2192,2242,2355,2856,2880,3163,3358,3388]
+
+
     makepng(filename)
 
     return 0

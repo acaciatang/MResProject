@@ -1,0 +1,14 @@
+st: 0 edit list: 1 Missing key frame while searching for timestamp: 3003
+st: 0 edit list 1 Cannot find an index entry before timestamp: 3003.
+Traceback (most recent call last):
+  File "/rds/general/user/tst116/home/TrackBEETag/Code/pyAV_test.py", line 36, in <module>
+    status = main(sys.argv)
+  File "/rds/general/user/tst116/home/TrackBEETag/Code/pyAV_test.py", line 31, in main
+    makepng(filename)
+  File "/rds/general/user/tst116/home/TrackBEETag/Code/pyAV_test.py", line 18, in makepng
+    for frame in container.decode(video=0):
+  File "av/container/input.pyx", line 182, in decode
+  File "av/container/input.pyx", line 142, in demux
+  File "av/container/core.pyx", line 258, in av.container.core.Container.err_check
+  File "av/error.pyx", line 336, in av.error.err_check
+av.error.OSError: [Errno 116] Stale file handle: '/rds/general/user/tst116/home/TrackBEETag/Data/P1000006.MP4'

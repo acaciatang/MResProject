@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=72:00:00
+#PBS -lwalltime=48:00:00
 #PBS -lselect=1:ncpus=8:ompthreads=8:mem=24gb
 date
 echo "loading modules"
@@ -11,9 +11,9 @@ which python
 
 echo "running code"
 date
-python $HOME/TrackBEETag/Code/pyAV_test.py
+python $HOME/TrackBEETag/Code/REDOpyAV_test.py
 matlab < $HOME/TrackBEETag/Code/locate16BitCodes_hpc.m
-python $HOME/TrackBEETag/Code/Wrangle.py
+python $HOME/TrackBEETag/Code/REDOWrangle.py
 date
 
 echo "Done! Moving files"

@@ -1,0 +1,200 @@
+st: 1 edit list: 1 Missing key frame while searching for timestamp: 0
+st: 1 edit list 1 Cannot find an index entry before timestamp: 0.
+Traceback (most recent call last):
+  File "/rds/general/user/tst116/home/TrackBEETag/Code/pyAV_test.py", line 36, in <module>
+    status = main(sys.argv)
+  File "/rds/general/user/tst116/home/TrackBEETag/Code/pyAV_test.py", line 31, in main
+    makepng(filename)
+  File "/rds/general/user/tst116/home/TrackBEETag/Code/pyAV_test.py", line 18, in makepng
+    for frame in container.decode(video=0):
+  File "av/container/input.pyx", line 182, in decode
+  File "av/container/input.pyx", line 142, in demux
+  File "av/container/core.pyx", line 258, in av.container.core.Container.err_check
+  File "av/error.pyx", line 336, in av.error.err_check
+av.error.OSError: [Errno 116] Stale file handle: '/rds/general/user/tst116/home/TrackBEETag/Data/AVCHD.MP4'
+
+--------------------------------------------------------------------------------
+          Segmentation violation detected at 2021-03-29 22:04:14 +0100
+--------------------------------------------------------------------------------
+
+Configuration:
+  Crash Decoding           : Disabled - No sandbox or build area path
+  Crash Mode               : continue (default)
+  Default Encoding         : UTF-8
+  Deployed                 : false
+  GNU C Library            : 2.28 stable
+  Graphics Driver          : Unknown software 
+  Graphics card 1          : 0x1a03 ( 0x1a03 ) 0x2000 Version 0.0.0.0 (0-0-0)
+  Java Version             : Java 1.8.0_202-b08 with Oracle Corporation Java HotSpot(TM) 64-Bit Server VM mixed mode
+  MATLAB Architecture      : glnxa64
+  MATLAB Entitlement ID    : 1101657
+  MATLAB Root              : /rds/general/applications/MATLAB/R2020b
+  MATLAB Version           : 9.9.0.1467703 (R2020b)
+  OpenGL                   : software
+  Operating System         : "CentOS Linux release 8.2.2004 (Core) "
+  Process ID               : 3605894
+  Processor ID             : x86 Family 143 Model 49 Stepping 0, AuthenticAMD
+  Session Key              : 008d5eb9-5de9-4f21-8a05-23c9e1dd1f4f
+  Static TLS mitigation    : Disabled: Unnecessary
+  Window System            : No active display
+
+Fault Count: 1
+
+
+Abnormal termination:
+Segmentation violation
+
+Current Thread: 'MCR 0 interpret' id 23264361445120
+
+Register State (from fault):
+  RAX = 0000000000000000  RBX = 00001528adff5d00
+  RCX = 00001523454e7110  RDX = 0000000000000028
+  RSP = 00001528a7fede60  RBP = 00001528a7fedec0
+  RSI = 00001523454e710b  RDI = 00001528ae03bd00
+
+   R8 = 0000000000000005   R9 = 0000000000000001
+  R10 = 00001528c00b3f60  R11 = 0000000086fbbdbb
+  R12 = 00001528a7fede80  R13 = 00001528b5a8dc48
+  R14 = 00001528ae03bd00  R15 = 00001528adf72800
+
+  RIP = 00001528a19a0477  EFL = 0000000000010206
+
+   CS = 0033   FS = 0000   GS = 0000
+
+Stack Trace (from fault):
+[  0] 0x00001528a19a0477 /rds/general/applications/MATLAB/R2020b/sys/java/jre/glnxa64/jre/lib/amd64/server/libjvm.so+07107703
+[  1] 0x00001528a19a07f4 /rds/general/applications/MATLAB/R2020b/sys/java/jre/glnxa64/jre/lib/amd64/server/libjvm.so+07108596
+[  2] 0x00001528b59fd564 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/matlab_startup_plugins/jmi/../../../../bin/glnxa64/libmwjmi.so+01172836
+[  3] 0x00001523454d5f77 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libuij.so+00298871 _Z16UIJ_CreateWindowPKci+00000039
+[  4] 0x00001523454d8efa /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libuij.so+00311034 _Z24UIJ_createFigureJavaPeerP10WinRec_tag+00000026
+[  5] 0x0000152345875603 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libmwhg.so+03630595
+[  6] 0x00001523458503a5 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libmwhg.so+03478437
+[  7] 0x0000152345876ede /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libmwhg.so+03636958
+[  8] 0x000015234589e356 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libmwhg.so+03797846
+[  9] 0x000015234589e828 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libmwhg.so+03799080
+[ 10] 0x0000152345a874ad /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libmwhg.so+05801133
+[ 11] 0x0000152345aa58a0 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hg/../../../../bin/glnxa64/libmwhg.so+05925024
+[ 12] 0x00001528a3cf44a3 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04539555
+[ 13] 0x00001528a3cf48fe /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04540670
+[ 14] 0x00001528a3cf5318 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04543256
+[ 15] 0x00001528a3cfd759 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04577113
+[ 16] 0x00001528a3cf5531 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04543793
+[ 17] 0x00001528a3cf571f /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04544287
+[ 18] 0x00001528a3cf5c80 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04545664
+[ 19] 0x00001528a3cf5e96 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwmcos_impl.so+04546198
+[ 20] 0x00001523328d3c2f /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hgbuiltins/../../../../bin/glnxa64/libmwhgbuiltins.so+02010159
+[ 21] 0x00001523328d34f4 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hgbuiltins/../../../../bin/glnxa64/libmwhgbuiltins.so+02008308
+[ 22] 0x00001523328fd182 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/builtins/matlab_graphics_hgbuiltins/../../../../bin/glnxa64/libmwhgbuiltins.so+02179458 _Z12createFigureiPP11mxArray_tagiS1_+00000930
+[ 23] 0x00001528bbc8a20f /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbuiltin.so+00061967 _ZNK9MathWorks7builtin10BuiltinFcn6invokeEiPP11mxArray_tagiS4_+00000079
+[ 24] 0x00001528bf6a9903 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_dispatcher.so+00755971
+[ 25] 0x00001528bf68c7cc /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_dispatcher.so+00636876
+[ 26] 0x00001528bf68caa1 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_dispatcher.so+00637601 _ZN18Mfh_MATLAB_fn_impl8dispatchEiPSt10unique_ptrI11mxArray_tagN6matrix6detail17mxDestroy_deleterEEiPPS1_+00000033
+[ 27] 0x00001528bccdc964 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+10959204
+[ 28] 0x00001528bcce0712 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+10974994
+[ 29] 0x00001528bce02abd /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+12163773
+[ 30] 0x00001528bcdf642b /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+12112939
+[ 31] 0x00001528bcd89e8d /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+11669133
+[ 32] 0x00001528bcd89f10 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+11669264
+[ 33] 0x00001528bc8bb274 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+06627956
+[ 34] 0x00001528bc8bd2b4 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+06636212
+[ 35] 0x00001528bc8ba391 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+06624145
+[ 36] 0x00001528bc8b23a5 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+06591397
+[ 37] 0x00001528bc8b2891 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+06592657
+[ 38] 0x00001528bc8b9c0a /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+06622218
+[ 39] 0x00001528bc8b9d06 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+06622470
+[ 40] 0x00001528bc9e1566 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+07832934
+[ 41] 0x00001528bc9e3ea5 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+07843493
+[ 42] 0x00001528bcbf8f21 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+10026785
+[ 43] 0x00001528bcbaa013 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+09703443
+[ 44] 0x00001528bcbad64f /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+09717327
+[ 45] 0x00001528bcbafc92 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+09727122
+[ 46] 0x00001528bcc415b4 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+10323380
+[ 47] 0x00001528bcc41769 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwm_lxe.so+10323817
+[ 48] 0x00001528bf9748e9 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwiqm.so+00588009
+[ 49] 0x00001528bf9d613a /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwiqm.so+00987450 _ZN3iqm14UserEvalPlugin7executeEP15inWorkSpace_tag+00000970
+[ 50] 0x00001528bf9ab6cf /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwiqm.so+00812751
+[ 51] 0x00001528bf9b9136 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwiqm.so+00868662
+[ 52] 0x00001528bf97db1c /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwiqm.so+00625436
+[ 53] 0x00001528c405ddd2 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00302546
+[ 54] 0x00001528c405e643 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00304707
+[ 55] 0x00001528c4064cd6 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00330966 _Z22mnGetCommandLineBufferbRbN7mwboost8optionalIKP15inWorkSpace_tagEEbRKNS0_9function2IN6mlutil14cmddistributor17inExecutionStatusERKNSt7__cxx1112basic_stringIDsSt11char_traitsIDsESaIDsEEES4_EE+00000230
+[ 56] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 57] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 58] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 59] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 60] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 61] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 62] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 63] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 64] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 65] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 66] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 67] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 68] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 69] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 70] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 71] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 72] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 73] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 74] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 75] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 76] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 77] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 78] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 79] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 80] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 81] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 82] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 83] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 84] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 85] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 86] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 87] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 88] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 89] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 90] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 91] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 92] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 93] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 94] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 95] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 96] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 97] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 98] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[ 99] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[100] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[101] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[102] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[103] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[104] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[105] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[106] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[107] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[108] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[109] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[110] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[111] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[112] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[113] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[114] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[115] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[116] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[117] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[118] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[119] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[120] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[121] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[122] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[123] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[124] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[125] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[126] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+[127] 0x00001528c404a375 /rds/general/applications/MATLAB/R2020b/bin/glnxa64/libmwbridge.so+00222069
+
+** This crash report has been saved to disk as /rds/general/user/tst116/home/matlab_crash_dump.3605894-1 **
+
+
+
+MATLAB is exiting because of fatal error
+/var/spool/PBS/mom_priv/jobs/3296927[5].pbs.SC: line 15: 3605894 Killed                  matlab < $HOME/TrackBEETag/Code/locate16BitCodes_hpc.m
+mv: cannot stat '*.mat': No such file or directory
