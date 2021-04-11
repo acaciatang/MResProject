@@ -17,9 +17,8 @@ import math
 from matching.games import HospitalResident
 import pandas as pd
 
-def makepng(filename):
+def makepng(filename, outname):
     container = av.open(filename)
-    outname = os.path.splitext(os.path.basename(filename))[0]
 
     for frame in container.decode(video=0):
         print("Printed frame " + str('%06d' % frame.index) + "!")
@@ -33,9 +32,6 @@ def extremepoints(contour):
     topmost = contour[contour[:,:,1].argmin()][0]
     bottommost = contour[contour[:,:,1].argmax()][0]
     return [leftmost, rightmost, topmost, bottommost]
-
-def distance(points):
-    distances = [math.sqrt((points[p-1][0]-points[p][0])**2 + (points[p-1][1]-points[p][1])**2) for p in points]
 
 def findtags(image):
     #load image and get name of output file
@@ -64,16 +60,6 @@ def findtags(image):
     contours = [blob for blob in contours if cv2.contourArea(blob) > 0]
     #drawcontours = cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
     #cv2.imwrite(outname + "_BWcontour.png", drawcontours)
-
-    #get white blobs (too slow not worth it)
-    #whites = []
-    #mask = np.zeros(G.shape,np.uint8)
-    #for blob in contours:
-    #    cv2.drawContours(mask,[blob],0,255,-1)
-    #    pixelpoints = np.transpose(np.nonzero(mask))
-    #    meanVal = cv2.mean(bw,mask = mask)[0]
-    #    if meanVal > 50:
-    #        whites.append(blob)
 
     # redraw contours to make convex
     redraw = [cv2.convexHull(blob) for blob in contours]
@@ -235,7 +221,7 @@ def drawtag(pts, R, outname):
 # find mean within polygon and transform, better yet do ozru on polygon
 # alternatively but this is harder, find parallel lines
 
-    #####get centroid here before transformation!######
+    #####get centroid and corners here before transformation!######
 
     #transform polygon (polygon should just be the tag)
     vertexes = extremepoints(approx)
@@ -355,8 +341,10 @@ def main(argv):
     elif image[0] == 'D':
         taglist = [59,75,104,135,211,237,324,341,361,377,413,436,456,510,579,609,637,664,681,720,802,844,910,1074,1104,1403,1620,1718,1799,1903,2006,2072,2192,2242,2355,2856,2880,3163,3358,3388]
 
+    outname = os.path.splitext(os.path.basename(filename))[0]
+    makepng(filename, outname)
+    findtags(image)
 
-    makepng(filename)
 
     return 0
 
@@ -364,12 +352,3 @@ if __name__ == "__main__":
     """Makes sure the "main" function is called from command line"""  
     status = main(sys.argv)
     sys.exit(status)
-
-#testdata
-#filename = 'P1000073.MP4'
-#image = 'D6_0.png'
-#image = 'B.png'
-findtags('A_000000.png')
-findtags('B_000000.png')
-findtags('C_000000.png')
-findtags('D_000000.png')
