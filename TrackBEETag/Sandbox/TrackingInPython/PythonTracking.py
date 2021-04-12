@@ -119,17 +119,17 @@ def drawmodel(id):
     model = np.rot90(model)*255 # I don't know why the matlab cod is like this but it is
     return model.astype(int)
     
-def drawtag(pts, R, outname, a):
+def drawtag(pts, gray, outname, a):
     #pts = potentialTags[a]
     #crop out potential tag region
-    cropped = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
+    cropped = gray[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
     croppedbkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
-    #cv2.imwrite(outname + "_cropped" + str(a) + ".png", cropped)
+    cv2.imwrite(outname + "_cropped" + str(a) + ".png", cropped)
     #bw = cv2.adaptiveThreshold (cropped,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
     
     #convert to black and white with Otsu's thresholding
     ret2,bw = cv2.threshold(cropped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) 
-    #cv2.imwrite(outname + "_bw" + str(a) + ".png", bw)
+    cv2.imwrite(outname + "_bw" + str(a) + ".png", bw)
 
     #contrast = cropped//32
     #contrast = contrast * 32
@@ -278,7 +278,7 @@ def drawtag(pts, R, outname, a):
 
 def scoretag(TAG, models):
     #ID tag
-    configs = [TAG, np.rot90(TAG, k=1), np.rot90(TAG, k=2), np.rot90(TAG, k=3)]
+    configs = [TAG, np.rot90(TAG, k=1, axes = (0, 1)), np.rot90(TAG, k=2, axes = (0, 1)), np.rot90(TAG, k=3)]
     difference = []
     direction = []
     
@@ -334,8 +334,8 @@ def main(argv):
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
     print (filename)
-    
-    filename = 'D6.MP4'
+
+    filename = 'A1.MP4'
     outname = os.path.splitext(os.path.basename(filename))[0]
     container = av.open(filename)
 
@@ -361,8 +361,9 @@ def main(argv):
         directions = pd.DataFrame()
         potentialTags = findtags(img, out) #potentialTags
         As = list()
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         for a in range(len(potentialTags)):
-            raw = drawtag(potentialTags[a], img[:, :, 2], out, a) # [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
+            raw = drawtag(potentialTags[a], gray, out, a) # [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
             if raw == None:
                 continue
             row = [(f, a, raw[2], raw[3], None, raw[4])] # [(frameNum, ID, centroidX, centroidY, dir, OneCM)]
