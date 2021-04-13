@@ -119,10 +119,11 @@ def drawmodel(id):
     model = np.rot90(model)*255 # I don't know why the matlab cod is like this but it is
     return model.astype(int)
     
-def drawtag(pts, gray, outname, a):
+def drawtag(pts, R, outname, a):
     #pts = potentialTags[a]
+    #R = img[:,:,2]
     #crop out potential tag region
-    cropped = gray[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
+    cropped = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
     croppedbkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
     cv2.imwrite(outname + "_cropped" + str(a) + ".png", cropped)
     #bw = cv2.adaptiveThreshold (cropped,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
@@ -238,8 +239,8 @@ def drawtag(pts, gray, outname, a):
         edge = min(tag.shape[0], tag.shape[1])
         tag = dst[0:edge, 0:edge]
     
-    if 20 < edge or edge > 50:
-        print('yikes')
+    if edge < 6:
+        print('too small')
         return None
     #draw tag
     ret2,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
@@ -266,7 +267,7 @@ def drawtag(pts, gray, outname, a):
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
 
     TAG2 = np.full((6, 6), 255)
-    celledge = round(edge/6)
+    celledge = math.floor(edge/6)
     thres = np.mean(bwtag[celledge:celledge*5, celledge:celledge*5])
     for i in range(6):
         for j in range(6):
@@ -335,7 +336,7 @@ def main(argv):
         filename = files[int(iter)-1]
     print (filename)
 
-    filename = 'A1.MP4'
+    filename = 'D6.MP4'
     outname = os.path.splitext(os.path.basename(filename))[0]
     container = av.open(filename)
 
@@ -361,9 +362,9 @@ def main(argv):
         directions = pd.DataFrame()
         potentialTags = findtags(img, out) #potentialTags
         As = list()
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         for a in range(len(potentialTags)):
-            raw = drawtag(potentialTags[a], gray, out, a) # [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
+            raw = drawtag(potentialTags[a], img[:,:,2], out, a) # [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
+            print(a)
             if raw == None:
                 continue
             row = [(f, a, raw[2], raw[3], None, raw[4])] # [(frameNum, ID, centroidX, centroidY, dir, OneCM)]
