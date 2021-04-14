@@ -26,6 +26,7 @@ def makepng(filename, outname):
         i = frame.index
     return i
 
+#change to distance to corners
 def extremepoints(contour):
     leftmost = contour[contour[:,:,0].argmin()][0]
     rightmost = contour[contour[:,:,0].argmax()][0]
@@ -245,6 +246,9 @@ def drawtag(pts, R, outname, a):
     #draw tag
     ret2,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+
+#enlarge
+
 
     TAG1 = np.full((6, 6), 255)
     thres = np.mean(bwtag)
