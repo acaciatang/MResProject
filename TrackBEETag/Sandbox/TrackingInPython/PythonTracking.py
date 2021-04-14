@@ -94,9 +94,23 @@ def findtags(img, outname):
     #cv2.imwrite(outname + "_BWredraw.png", drawredraw)
 
     # make triangles into squares
+    notri = []
     for blob in redraw:
         if len(blob) == 3:
-            missing = 
+            Xs = blob[:, 0][:,0]
+            Ys = blob[:, 0][:,1]
+
+            minX = min(Xs)
+            maxX = max(Xs)
+            minY = min(Ys)
+            maxY = max(Ys)
+
+            p1 = np.array([[minX, minY]])
+            p2 = np.array([[maxX, minY]])
+            p3 = np.array([[maxX, maxY]])
+            p4 = np.array([[minX, maxY]])
+            
+            notri.append(np.array([p1, p2, p3, p4]))
         else:
             notri.append(blob)
 
@@ -390,7 +404,7 @@ def main(argv):
         if f > 20:
             break
         img = frame.to_ndarray(format='bgr24')
-        break
+        #break
         out = outname +  "_" + str(f)
 
         frameData = pd.DataFrame()
