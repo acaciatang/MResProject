@@ -26,13 +26,38 @@ def makepng(filename, outname):
         i = frame.index
     return i
 
+def caldis(pt, corner):
+    dis = math.sqrt((pt[0][0]-corner[0])**2 + (pt[0][1]-corner[1])**2)
+    return dis
+
 #change to distance to corners
 def extremepoints(contour):
-    leftmost = contour[contour[:,:,0].argmin()][0]
-    rightmost = contour[contour[:,:,0].argmax()][0]
-    topmost = contour[contour[:,:,1].argmin()][0]
-    bottommost = contour[contour[:,:,1].argmax()][0]
-    return [leftmost, rightmost, topmost, bottommost]
+    Xs = contour[:, 0][:,0]
+    Ys = contour[:, 0][:,1]
+
+    minX = min(Xs)
+    maxX = max(Xs)
+    minY = min(Ys)
+    maxY = max(Ys)
+
+    dis1 = [caldis(pt, [minX, minY]) for pt in contour]
+    dis2 = [caldis(pt, [maxX, minY]) for pt in contour]
+    dis3 = [caldis(pt, [maxX, maxY]) for pt in contour]
+    dis4 = [caldis(pt, [minX, maxY]) for pt in contour]
+    
+    p1 = contour[dis1.index(min(dis1))][0]
+    p2 = contour[dis2.index(min(dis2))][0]
+    p3 = contour[dis3.index(min(dis3))][0]
+    p4 = contour[dis4.index(min(dis4))][0]
+
+    return [p1, p2, p3, p4]
+
+def convert(vertexes, x, y):
+    for i in range(len(vertexes)):
+        vertexes[i][0] = vertexes[i][0] + x
+        vertexes[i][1] = vertexes[i][1] + y
+
+    return vertexes
 
 def findtags(img, outname):
     #load image and get name of output file
@@ -126,12 +151,12 @@ def drawtag(pts, R, outname, a):
     #crop out potential tag region
     cropped = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
     croppedbkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
-    cv2.imwrite(outname + "_cropped" + str(a) + ".png", cropped)
+    #cv2.imwrite(outname + "_cropped" + str(a) + ".png", cropped)
     #bw = cv2.adaptiveThreshold (cropped,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
     
     #convert to black and white with Otsu's thresholding
     ret2,bw = cv2.threshold(cropped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) 
-    cv2.imwrite(outname + "_bw" + str(a) + ".png", bw)
+    #cv2.imwrite(outname + "_bw" + str(a) + ".png", bw)
 
     #contrast = cropped//32
     #contrast = contrast * 32
@@ -162,9 +187,9 @@ def drawtag(pts, R, outname, a):
     #polygon = cv2.drawContours(croppedbkgd, [approx], -1, (0,0,255), 1, cv2.LINE_AA)
     #cv2.imwrite(outname + "_polygon" + str(a) + ".png", polygon)
     test = [0]
-    #this is bad, try something else
-    # find mean within polygon and transform, better yet do ozru on polygon
-    # alternatively but this is harder, find parallel lines
+#this is bad, try something else
+# find mean within polygon and transform, better yet do ozru on polygon
+# alternatively but this is harder, find parallel lines
     while True:
         edgeLens = [math.sqrt((approx[i-1][0][0]-approx[i][0][0])**2 + (approx[i-1][0][1]-approx[i][0][1])**2) for i in range(len(approx))]
         Closest = []
@@ -216,15 +241,14 @@ def drawtag(pts, R, outname, a):
         return None
     
     moments = cv2.moments(approx)
-    centroidX = int(moments['m10']/moments['m00'])
-    centroidY = int(moments['m01']/moments['m00'])
+    centroidX = int(moments['m10']/moments['m00']) + pts[0]
+    centroidY = int(moments['m01']/moments['m00']) + pts[1]
     #polygon = cv2.drawContours(croppedbkgd, [approx], -1, (0,255,0), 1, cv2.LINE_AA)
     #cv2.imwrite(outname + "_polygon2_" + str(a) + ".png", polygon)
 
-    #####get centroid and corners here before transformation!######
-
     #transform polygon (polygon should just be the tag)
     vertexes = extremepoints(approx)
+    corners = convert(vertexes, pts[0], pts[1])
     edges = [math.sqrt((vertexes[p-1][0]-vertexes[p][0])**2 + (vertexes[p-1][1]-vertexes[p][1])**2) for p in range(len(vertexes))]
     edge = math.floor(min(edges))
 
@@ -241,27 +265,25 @@ def drawtag(pts, R, outname, a):
         tag = dst[0:edge, 0:edge]
     
     if edge < 6:
-        print('too small')
         return None
     #draw tag
     ret2,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
 
-#enlarge
-
+    #enlarge
+    bwtag = cv2.resize(bwtag, (edge*6, edge*6))
 
     TAG1 = np.full((6, 6), 255)
     thres = np.mean(bwtag)
-    celledge = edge/6
     for i in range(6):
         for j in range(6):
-            test = np.mean(bwtag[math.floor(celledge*i):math.floor(celledge*(i+1)), math.floor(celledge*j):math.floor(celledge*(j+1))])
+            test = np.mean(bwtag[edge*i:edge*(i+1), edge*j:edge*(j+1)])
             if i == 5:
-                test = np.mean(bwtag[math.floor(celledge*i):math.floor(celledge*(i+1)-1), math.floor(celledge*j):math.floor(celledge*(j+1))])
+                test = np.mean(bwtag[edge*i:edge*(i+1), edge*j:edge*(j+1)])
                 if j == 5: 
-                    test = np.mean(bwtag[math.floor(celledge*i):math.floor(celledge*(i+1)-1), math.floor(celledge*j):math.floor(celledge*(j+1)-1)])
+                    test = np.mean(bwtag[edge*i:edge*(i+1), edge*j:edge*(j+1)])
             if j == 5:
-                test = np.mean(bwtag[math.floor(celledge*i):math.floor(celledge*(i+1)), math.floor(celledge*j):math.floor(celledge*(j+1)-1)])
+                test = np.mean(bwtag[edge*i:edge*(i+1), edge*j:edge*(j+1)])
             if test < thres:
                 if i == 0 or j == 0:
                     continue
@@ -271,15 +293,14 @@ def drawtag(pts, R, outname, a):
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
 
     TAG2 = np.full((6, 6), 255)
-    celledge = math.floor(edge/6)
-    thres = np.mean(bwtag[celledge:celledge*5, celledge:celledge*5])
+    thres = np.mean(bwtag[edge:edge*5, edge:edge*5])
     for i in range(6):
         for j in range(6):
-            TAG2[i,j] = np.median(bwtag[math.floor(celledge*i):math.floor(celledge*(i+1)), math.floor(celledge*j):math.floor(celledge*(j+1))])
+            TAG2[i,j] = np.median(bwtag[edge*i:edge*(i+1), edge*j:edge*(j+1)])
             if i == 0 or j == 0:
                 TAG2[i,j] = 255
     #cv2.imwrite(outname + "_bwTAG2_" + str(a) + ".png", TAG2)
-    return [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
+    return [[TAG1, TAG2], corners, centroidX, centroidY, OneCM]
 
 def scoretag(TAG, models):
     #ID tag
@@ -340,7 +361,8 @@ def main(argv):
         filename = files[int(iter)-1]
     print (filename)
 
-    filename = 'D6.MP4'
+    #filename = 'D6.MP4'
+    filename = 'A1.MP4'
     outname = os.path.splitext(os.path.basename(filename))[0]
     container = av.open(filename)
 
@@ -358,7 +380,7 @@ def main(argv):
     f = 0
     for frame in container.decode(video=0):
         img = frame.to_ndarray(format='bgr24')
-        #break
+        break
         out = outname +  "_" + str(f)
 
         frameData = pd.DataFrame()
@@ -368,9 +390,10 @@ def main(argv):
         As = list()
         for a in range(len(potentialTags)):
             raw = drawtag(potentialTags[a], img[:,:,2], out, a) # [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
-            print(a)
             if raw == None:
                 continue
+            frontchoice = [np.array([round((raw[1][i][0]+raw[1][(i+1)%4][0])/2), round((raw[1][i][1]+raw[1][(i+1)%4][1])/2)])  for i in range(4)]
+            dirchoice = [math.degrees(math.atan2(frontchoice[i][0]-raw[2], raw[3]-frontchoice[i][1])) for i in range(4)]
             row = [(f, a, raw[2], raw[3], None, raw[4])] # [(frameNum, ID, centroidX, centroidY, dir, OneCM)]
             frameData = frameData.append(row, ignore_index=True)
 
@@ -380,17 +403,21 @@ def main(argv):
             TAG2dir = scoretag(raw[0][1], models)[1]
 
             score = [[min(TAG1score[i], TAG2score[i]) for i in range(len(models))]]
+            
             dir = []
             for i in range(len(models)):
                 if TAG1score[i] < TAG2score[i]:
                     dir.append(TAG1dir[i])
                 else:
                     dir.append(TAG2dir[i])
+            dir = [dirchoice[d] for d in dir]
             dir = [dir]
+
             As.append(a)
 
             scores = scores.append(score, ignore_index=True)
             directions = directions.append(dir, ignore_index=True)
+            print(a)
             
         scores = scores.rename(index = {h: As[h] for h in scores.index}, columns = {h: taglist[h] for h in scores.columns})
         directions = directions.rename(index = {h: As[h] for h in directions.index}, columns = {h: taglist[h] for h in directions.columns})
@@ -403,6 +430,8 @@ def main(argv):
                 values.append(str(d[0]))
     
         frameData[1] = [list(matchResults.keys())[values.index(str(i))] for i in frameData[1]]
+        frameData[4] = [directions[int(str(frameData[1][i]))][As[i]] for i in frameData.index]
+
         wrangled = wrangled.append(frameData, ignore_index=True)
         print("Finished frame " + str(f))
         f = f+1
