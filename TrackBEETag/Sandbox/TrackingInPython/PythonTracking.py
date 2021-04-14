@@ -73,11 +73,12 @@ def findtags(img, outname):
 
     #convert to black and white with Otsu's thresholding after Gaussian filtering
     blur = cv2.GaussianBlur(G,(5,5),0)
-    ret3,bw = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)    
+    ret,toodark = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    ret2,bw =  cv2.threshold(blur,(ret-2),255,cv2.THRESH_BINARY)
     #cv2.imwrite(outname + "_BW.png", bw)
 
     #make blobs more blobby
-    kernel = np.ones((10,10),np.uint8)
+    kernel = np.ones((5,5),np.uint8)
     close = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
     #cv2.imwrite(outname + "_close.png", close)
     
@@ -92,9 +93,16 @@ def findtags(img, outname):
     #drawredraw = cv2.drawContours(bkgd, redraw, -1, (0,255,0), 1) 
     #cv2.imwrite(outname + "_BWredraw.png", drawredraw)
 
+    # make triangles into squares
+    for blob in redraw:
+        if len(blob) == 3:
+            missing = 
+        else:
+            notri.append(blob)
+
     # filter for blobs of right size based on extreme points
     rightsize = []
-    for blob in redraw:
+    for blob in notri:
         points = extremepoints(blob)
         distances1 = [math.sqrt((points[p-1][0]-points[p][0])**2 + (points[p-1][1]-points[p][1])**2) for p in range(len(points))]
         distances2 = [math.sqrt((blob[p-1][0][0]-blob[p][0][0])**2 + (blob[p-1][0][1]-blob[p][0][1])**2) for p in range(len(blob))]
@@ -379,6 +387,8 @@ def main(argv):
     wrangled = pd.DataFrame()
     f = 0
     for frame in container.decode(video=0):
+        if f > 20:
+            break
         img = frame.to_ndarray(format='bgr24')
         break
         out = outname +  "_" + str(f)
