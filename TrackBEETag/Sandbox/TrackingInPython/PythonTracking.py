@@ -52,6 +52,14 @@ def extremepoints(contour):
 
     return [p1, p2, p3, p4]
 
+def lrtb(contour):  
+    leftmost = contour[contour[:,:,0].argmin()][0]
+    rightmost = contour[contour[:,:,0].argmax()][0]
+    topmost = contour[contour[:,:,1].argmin()][0]
+    bottommost = contour[contour[:,:,1].argmax()][0]
+    
+    return[leftmost, rightmost, topmost, bottommost]
+
 def convert(vertexes, x, y):
     for i in range(len(vertexes)):
         vertexes[i][0] = vertexes[i][0] + x
@@ -145,10 +153,10 @@ def findtags(img, outname):
     #cv2.imwrite(outname + "_BWfillrect.png", fillrect)
 
     # crop out each rectangle from red channel
-    mask = cv2.inRange(fillrect, np.array([0,0,255]), np.array([0,0,255]))
-    cropped = cv2.bitwise_and(img,img, mask= mask)
-    output = cv2.add(cropped,cv2.cvtColor(R,cv2.COLOR_GRAY2RGB))
-    cv2.imwrite(outname + "_potentialTags.png", output)
+    #mask = cv2.inRange(fillrect, np.array([0,0,255]), np.array([0,0,255]))
+    #cropped = cv2.bitwise_and(img,img, mask= mask)
+    #output = cv2.add(cropped,cv2.cvtColor(R,cv2.COLOR_GRAY2RGB))
+    #cv2.imwrite(outname + "_potentialTags.png", output)
 
     return potentialTags
 
@@ -173,8 +181,8 @@ def drawtag(pts, R, outname, a):
     #crop out potential tag region
     cropped = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
     croppedbkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
-    #cv2.imwrite(outname + "_cropped" + str(a) + ".png", cropped)
-    #bw = cv2.adaptiveThreshold (cropped,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
+    cv2.imwrite(outname + "_cropped" + str(a) + ".png", cropped)
+    bw = cv2.adaptiveThreshold (cropped,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
     
     #convert to black and white with Otsu's thresholding
     ret2,bw = cv2.threshold(cropped,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU) 
@@ -190,14 +198,8 @@ def drawtag(pts, R, outname, a):
 
     contours, hierarchy = cv2.findContours(bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     areas = np.array([cv2.contourArea(blob) for blob in contours])
-    largest = contours[np.where(areas == areas.max())[0][0]]
-    
-    leftmost = largest[largest[:,:,0].argmin()][0]
-    rightmost = largest[largest[:,:,0].argmax()][0]
-    topmost = largest[largest[:,:,1].argmin()][0]
-    bottommost = largest[largest[:,:,1].argmax()][0]
-    
-    points = [leftmost, rightmost, topmost, bottommost]
+    largest = contours[np.where(areas == areas.max())[0][0]]    
+    points = lrtb(largest)
     POIs = [int(not (pts[2]-1 in p or 0 in p or pts[3]-1 in p)) for p in points]
     
     if sum(POIs) < 2:
@@ -262,25 +264,26 @@ def drawtag(pts, R, outname, a):
     if len(approx) < 2:
         return None
     
-    moments = cv2.moments(approx)
-    centroidX = int(moments['m10']/moments['m00']) + pts[0]
-    centroidY = int(moments['m01']/moments['m00']) + pts[1]
+    #moments = cv2.moments(approx)
+    #centroidX = int(moments['m10']/moments['m00']) + pts[0]
+    #centroidY = int(moments['m01']/moments['m00']) + pts[1]
     #polygon = cv2.drawContours(croppedbkgd, [approx], -1, (0,255,0), 1, cv2.LINE_AA)
     #cv2.imwrite(outname + "_polygon2_" + str(a) + ".png", polygon)
 
     #transform polygon (polygon should just be the tag)
     vertexes = extremepoints(approx)
-    corners = convert(vertexes, pts[0], pts[1])
     edges = [math.sqrt((vertexes[p-1][0]-vertexes[p][0])**2 + (vertexes[p-1][1]-vertexes[p][1])**2) for p in range(len(vertexes))]
     edge = math.floor(min(edges))
 
-    OneCM = edge/0.3 ##measure the tag to get actual edge length!!
+    OneCM = edge/0.3
     rows,cols = cropped.shape
-    pts1 = np.float32([leftmost,rightmost,bottommost])
+    pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
     pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
     M = cv2.getAffineTransform(pts1,pts2)
     dst = cv2.warpAffine(cropped,M,(cols,rows))
     tag = dst[0:edge, 0:edge]
+
+    #cv2.imwrite(outname + "_tag_" + str(a) + ".png", tag)
 
     if tag.shape[0] != tag.shape[1]:
         edge = min(tag.shape[0], tag.shape[1])
@@ -290,7 +293,7 @@ def drawtag(pts, R, outname, a):
         return None
     #draw tag
     ret2,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+    cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
 
     #enlarge
     bwtag = cv2.resize(bwtag, (edge*6, edge*6))
@@ -322,6 +325,14 @@ def drawtag(pts, R, outname, a):
             if i == 0 or j == 0:
                 TAG2[i,j] = 255
     #cv2.imwrite(outname + "_bwTAG2_" + str(a) + ".png", TAG2)
+
+    corners = vertexes
+    corners = convert(corners, pts[0], pts[1])
+    Xs = [corners[i][0] for i in range(4)]
+    Ys = [corners[i][1] for i in range(4)]
+    centroidX = sum(Xs)/4
+    centroidY = sum(Ys)/4
+
     return [[TAG1, TAG2], corners, centroidX, centroidY, OneCM]
 
 def scoretag(TAG, models):
@@ -383,8 +394,8 @@ def main(argv):
         filename = files[int(iter)-1]
     print (filename)
 
-    #filename = 'D6.MP4'
-    filename = 'A1.MP4'
+    filename = 'D6.MP4'
+    #filename = 'A1.MP4'
     outname = os.path.splitext(os.path.basename(filename))[0]
     container = av.open(filename)
 

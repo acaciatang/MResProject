@@ -43,8 +43,8 @@ def getCoor(outname, id, thres):
     subset['keep'] = keep
     subset = subset.loc[subset["keep"] == True, ["frame", "centroidX", "centroidY"]]
     
-    if len(subset.index) > 0:
-        subset.to_csv(path_or_buf = outname + "_" + str(id) + ".csv", na_rep = "NA", index = False)
+    #if len(subset.index) > 0:
+    #    subset.to_csv(path_or_buf = outname + "_" + str(id) + ".csv", na_rep = "NA", index = False)
     
     return subset.reset_index(drop=True)
 
@@ -100,7 +100,38 @@ def drawLines(allCoors, FRAME, frameNum):
 def main(argv):
     """ Main entry point of the program """
     if len(sys.argv) == 2:
-        filename = argv[1]
+        if argv[1] == '.':
+            files = [f for f in os.listdir('.') if f[-4:-1] == '.MP']
+            for filename in files:
+                outname = os.path.splitext(os.path.basename(filename))[0]
+                allCoors = getallCoor(outname, thres = 10)
+                
+                cap = cv2.VideoCapture(filename)
+                # Define the codec and create VideoWriter object
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                out = cv2.VideoWriter(outname + "_tracks.mp4", fourcc, 20.0, (3840,2160))
+
+                i=0
+                while(cap.isOpened()):
+                    ret, frame = cap.read()
+                    if ret == False:
+                            break
+                    frame = drawLines(allCoors, frame, i)
+
+                    # write the flipped frame
+                    out.write(frame)
+                    print("Wrote frame " + str(i))
+                    #cv2.imshow('frame',frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+                    i+=1 
+
+                # Release everything if job is finished
+                cap.release()
+                out.release()
+                cv2.destroyAllWindows()
+        else:
+            filename = argv[1]
     else:
         iter = os.getenv('PBS_ARRAY_INDEX')
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
