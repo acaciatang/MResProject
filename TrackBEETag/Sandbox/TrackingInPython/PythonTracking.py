@@ -283,8 +283,10 @@ def drawtag(pts, R, outname, a):
                 tag = tags[average.index(max(average))]
 
     if tag.shape[0] != tag.shape[1]:
-        edge = min(tag.shape[0], tag.shape[1])
+        edge = max(tag.shape[0], tag.shape[1]) #was min
         tag = dst[0:edge, 0:edge]
+    
+    #cv2.imwrite(outname + "_tag_" + str(a) + ".png", tag)
     
     if edge > 40:
         return None
@@ -333,16 +335,23 @@ def drawtag(pts, R, outname, a):
     kernel = np.ones((3,3),np.uint8)
     close = cv2.morphologyEx(bwtag, cv2.MORPH_CLOSE, kernel)
     #cv2.imwrite(outname + "_close_" + str(a) + ".png", close)
-    
-    bw2 = np.full((close.shape[0]+20, close.shape[0]+20), 255, dtype = 'uint8')
-    bw2[10:close.shape[0]+10, 10:close.shape[0]+10] = close
-    
-    contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    allcontours = [contours[i][j] for i in range(len(contours)) for j in range(len(contours[i]))]
+    if len(allcontours) == 0:
+        return None
+    noedges = np.array([allcontours[i] for i in range(len(allcontours)) if allcontours[i][0][0] != 0 and allcontours[i][0][0] != close.shape[0]-1 and allcontours[i][0][1] != 0 and allcontours[i][0][1] != close.shape[0]-1 ])
+
+    left = min(noedges[:,:, 0]) + 1
+    right = close.shape[0]-max(noedges[:,:, 0])
+    top = min(noedges[:,:, 1]) + 1
+    bottom = close.shape[0]-max(noedges[:,:, 1])
+
+    newmargins = np.full((max(left, right)[0]*6, max(top, bottom)[0]*6), 255)
+
     areas = np.array([cv2.contourArea(blob) for blob in contours])
     border = contours[np.where(areas == areas.max())[0][0]]
     contours.remove(border)
-    if len(contours) == 0:
-        return None
+
     areas = np.array([cv2.contourArea(blob) for blob in contours])
     largest = contours[np.where(areas == areas.max())[0][0]]
     #transform polygon (polygon should just be the tag)
@@ -495,7 +504,7 @@ def main(argv):
     f = 0
     for frame in container.decode(video=0):
         img = frame.to_ndarray(format='bgr24')
-        #break
+        break
         out = outname +  "_" + str(f)
 
         frameData = pd.DataFrame()
