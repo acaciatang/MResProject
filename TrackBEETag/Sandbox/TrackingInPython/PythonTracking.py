@@ -286,41 +286,38 @@ def drawtag(pts, R, outname, a):
         edge = min(tag.shape[0], tag.shape[1])
         tag = dst[0:edge, 0:edge]
     
-    if edge < 20 or edge > 40:
-        return None
-    
-    if testarea/(edge*edge) < 1 or testarea/(edge*edge) > 1.5:
+    if edge > 40:
         return None
 
     #draw tag
-    ret2,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
 
     #enlarge
-    bwtag = cv2.resize(bwtag, (edge*6, edge*6))
-    #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+    bwtag2 = cv2.resize(bwtag, (edge*6, edge*6))
+    #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
+    graytag2 = cv2.resize(tag, (edge*6, edge*6))
 
     TAG1 = np.full((6, 6), 255)
-    thres = np.mean(bwtag)-16
     for i in range(6):
         for j in range(6):
-            test = np.mean(bwtag[edge*i:edge*(i+1), edge*j:edge*(j+1)])
+            test = np.mean(bwtag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
             if test < thres:
                 if i == 0 or i == 5 or j == 0 or j == 5:
                     continue
                 else:
                     TAG1[i,j] = 0         
-    #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
+    cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
 
     TAG2 = np.full((6, 6), 255)
     for i in range(6):
         for j in range(6):
-            TAG2[i,j] = np.median(bwtag[edge*i:edge*(i+1), edge*j:edge*(j+1)])
-            if TAG2[i, j] < 127:
+            TAG2[i,j] = np.mean(graytag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
+            if TAG2[i, j] < thres - 16:
                 TAG2[i,j] = 0
             if i == 0 or i == 5 or j == 0 or j == 5 or TAG2[i, j] > 128:
                 TAG2[i,j] = 255
-    #cv2.imwrite(outname + "_bwTAG2_" + str(a) + ".png", TAG2)
+    cv2.imwrite(outname + "_bwTAG2_" + str(a) + ".png", TAG2)
 
     if np.sum(TAG1) < 1020 and np.sum(TAG2) < 1020:
         return None
@@ -331,10 +328,93 @@ def drawtag(pts, R, outname, a):
     Ys = [corners[i][0][1] for i in range(4)]
     centroidX = sum(Xs)/4
     centroidY = sum(Ys)/4
+    
+    #check for misalignment, if found, add corrected tags
+    kernel = np.ones((3,3),np.uint8)
+    close = cv2.morphologyEx(bwtag, cv2.MORPH_CLOSE, kernel)
+    #cv2.imwrite(outname + "_close_" + str(a) + ".png", close)
+    
+    bw2 = np.full((close.shape[0]+20, close.shape[0]+20), 255, dtype = 'uint8')
+    bw2[10:close.shape[0]+10, 10:close.shape[0]+10] = close
+    
+    contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    areas = np.array([cv2.contourArea(blob) for blob in contours])
+    border = contours[np.where(areas == areas.max())[0][0]]
+    contours.remove(border)
+    if len(contours) == 0:
+        return None
+    areas = np.array([cv2.contourArea(blob) for blob in contours])
+    largest = contours[np.where(areas == areas.max())[0][0]]
+    #transform polygon (polygon should just be the tag)
+    epsilon = 0.02*cv2.arcLength(largest,True)
+    approx = cv2.approxPolyDP(largest,epsilon,True)
+    #polygon = cv2.drawContours(cv2.cvtColor(bw2,cv2.COLOR_GRAY2RGB), [approx], -1, (0,255,0), 1, cv2.LINE_AA)
+    #cv2.imwrite(outname + "_approx_" + str(a) + ".png", polygon)
+    
+    ###check and correct for tilt
+    DISs = [math.sqrt((approx[i][0][0]-approx[i-1][0][0])**2 + (approx[i][0][1]-approx[i-1][0][1])**2) for i in range(len(approx))]
+    longest = DISs.index(max(DISs))
+    Xdiff = abs(approx[longest][0][0]-approx[longest-1][0][0])
+    Ydiff = abs(approx[longest][0][1]-approx[longest-1][0][1])
+    if min(Xdiff, Ydiff) > 2:
+        angle = math.degrees(math.atan2(approx[longest-1][0][1]-approx[longest][0][1], approx[longest-1][0][0]-approx[longest][0][0]))
+        rows,cols = bw2.shape
+        M = cv2.getRotationMatrix2D((cols/2,rows/2),angle,1)
+        dst = cv2.warpAffine(bw2,M,(cols,rows))
+        bw2 = dst[min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2), min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2)]
 
-    #cv2.imwrite(outname + "_cropped_" + str(a) + ".png", cropped)
+        cv2.imwrite(outname + "_rotated_" + str(a) + ".png", bw2)
+        CORNERS = [corners, angle]
+    
+    ###check and correct for scaling and margin
+    points = np.array(extremepoints(approx))
+    Xdis = max(points[:, 0]) - min(points[:,0])
+    Ydis = max(points[:, 1]) - min(points[:,1])
+    taglength = max(Xdis, Ydis)
 
-    return [[TAG1, TAG2], corners, centroidX, centroidY, OneCM]
+    margin = round(taglength/4)
+    top = min(points[:,1]) - margin
+    bottom = bw2.shape[0]-(max(points[:, 1]) + margin)
+    left = min(points[:,0]) - margin
+    right = bw2.shape[0]-(max(points[:, 0]) + margin)
+
+    dimensions = [top, bottom, left, right]
+
+    tag2 = bw2[top:bw2.shape[0]-bottom, left:bw2.shape[0]-right]
+    if tag2.shape[0] != tag2.shape[1]:
+        change = dimensions.index(max(dimensions))
+        if change%2 == 0:
+            dimensions[change] = dimensions[change-1] + dimensions[change-2] - dimensions[change+1]
+        else:
+            dimensions[change] = dimensions[(change+1)%4] + dimensions[(change+2)%4] - dimensions[change-1]
+        
+        tag2 = bw2[dimensions[0]:bw2.shape[0]-dimensions[1], dimensions[2]:bw2.shape[0]-dimensions[3]]
+
+    #cv2.imwrite(outname + "_cropped_" + str(a) + ".png", tag2)
+    
+    TAG3 = np.full((6, 6), 255)
+    for i in range(6):
+        for j in range(6):
+            test = np.mean(bwtag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
+            if test < thres:
+                if i == 0 or i == 5 or j == 0 or j == 5:
+                    continue
+                else:
+                    TAG3[i,j] = 0         
+    cv2.imwrite(outname + "_bwTAG3_" + str(a) + ".png", TAG3)
+
+    TAG4 = np.full((6, 6), 255)
+    for i in range(6):
+        for j in range(6):
+            TAG2[i,j] = np.mean(bwtag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
+            if TAG2[i, j] < thres - 16:
+                TAG2[i,j] = 0
+            if i == 0 or i == 5 or j == 0 or j == 5 or TAG2[i, j] > 128:
+                TAG4[i,j] = 255
+    cv2.imwrite(outname + "_bwTAG4_" + str(a) + ".png", TAG4)
+
+    TAGs = [TAG1, TAG2, TAG3, TAG4]
+    return [TAGs, corners, centroidX, centroidY, OneCM]
 
 def scoretag(TAG, models):
     #ID tag
@@ -429,15 +509,20 @@ def main(argv):
                 continue
             frontchoice = [np.array([round((raw[1][i][0][0]+raw[1][(i+1)%4][0][0])/2), round((raw[1][i][0][1]+raw[1][(i+1)%4][0][1])/2)])  for i in range(4)]
             dirchoice = [math.degrees(math.atan2(frontchoice[i][0]-raw[2], raw[3]-frontchoice[i][1])) for i in range(4)]
-            row = [f, a, raw[2], raw[3], None, raw[4], None, None] # [(frameNum, ID, centroidX, centroidY, dir, OneCM, test, score)]
+            row = [str(f), int(a), raw[2], raw[3], None, raw[4], None, None] # [(frameNum, ID, centroidX, centroidY, dir, OneCM, test, score)]
 
             TAG1score = scoretag(raw[0][0], models)[0]
             TAG1dir = scoretag(raw[0][0], models)[1]
             TAG2score = scoretag(raw[0][1], models)[0]
             TAG2dir = scoretag(raw[0][1], models)[1]
+            TAG3score = scoretag(raw[0][2], models)[0]
+            TAG3dir = scoretag(raw[0][2], models)[1]
+            TAG4score = scoretag(raw[0][3], models)[0]
+            TAG4dir = scoretag(raw[0][3], models)[1]
 
-            score = [min(TAG1score[i], TAG2score[i]) for i in range(len(models))]
-            
+            score = [min(TAG1score[i], TAG2score[i], TAG3score[i], TAG4score[i]) for i in range(len(models))]
+
+#fix me!
             dir = []
             for i in range(len(models)):
                 if TAG1score[i] < TAG2score[i]:
@@ -448,10 +533,11 @@ def main(argv):
 
             if min(score) < 2:
                 As.append(a)
-                row[1] = taglist[score.index(min(score))]
+                row[1] = str(int(taglist[score.index(min(score))]))
                 row[4] = dir[score.index(min(score))]
+                row[7] = str(int(min(score)))
+                
                 frameData = frameData.append([tuple(row)], ignore_index=True)
-                row[7] = min(score)
                 print(a)
         frameData[6] = As
         wrangled = wrangled.append(frameData, ignore_index=True)

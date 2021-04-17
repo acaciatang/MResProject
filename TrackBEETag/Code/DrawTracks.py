@@ -20,12 +20,13 @@ def getCoor(outname, id, thres):
     csvfile = outname + ".csv"
     all = pd.read_csv(csvfile)
     subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]]
+    subset
     missing = pd.DataFrame()
     subset = subset.append(missing, ignore_index=True)
 
     for i in range(subset.shape[0]-1):
         if 1 < subset["frame"][i+1] - subset["frame"][i] < thres:
-            addframe = pd.DataFrame(list(int(range(subset["frame"][i] + 1), int(subset["frame"][i+1]))))
+            addframe = pd.DataFrame(list(range(subset["frame"][i] + 1, subset["frame"][i+1])))
             addX = pd.DataFrame([subset["centroidX"][i] + (subset["centroidX"][i+1]-subset["centroidX"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
             addY = pd.DataFrame([subset["centroidY"][i] + (subset["centroidY"][i+1]-subset["centroidY"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
             addme = pd.concat([addframe, addX, addY], axis = 1)
@@ -50,8 +51,6 @@ def getCoor(outname, id, thres):
 def getallCoor(outname, thres):
     csvfile = outname + ".csv"
     all = pd.read_csv(csvfile)
-    all['frame'] = all['frame'].astype('int64')
-    all['ID'] = all['ID'].astype('int64')    
     IDs = pd.DataFrame(all["ID"].value_counts())
     IDs.reset_index(level=0, inplace=True)
     IDs.columns = ["ID", "freq"]
@@ -159,7 +158,7 @@ def main(argv):
         #cv2.imshow('frame',frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        i+=1
+        i+=1 
 
     # Release everything if job is finished
     cap.release()
