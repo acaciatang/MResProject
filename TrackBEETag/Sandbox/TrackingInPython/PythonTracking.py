@@ -188,8 +188,8 @@ def drawmodel(id):
     return model.astype(int)
 
 def drawtag(pts, R, outname, a):
-    pts = potentialTags[a]
-    R = img[:,:,2]
+    #pts = potentialTags[a]
+    #R = img[:,:,2]
     #crop out potential tag region
     cropped = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
     croppedbkgd = cv2.cvtColor(cropped,cv2.COLOR_GRAY2RGB)
@@ -233,6 +233,7 @@ def drawtag(pts, R, outname, a):
 
     vertexes = closesttosides(approx)
     test = np.array(vertexes)
+
     if len(np.unique(test, axis = 0)) < 4:
         return None
     
@@ -309,6 +310,17 @@ def drawtag(pts, R, outname, a):
                 TAG1[i,j] = 255
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
 
+    TAG2 = np.full((6, 6), 255)
+    for i in range(6):
+        for j in range(6):
+            test = np.mean(bwtag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
+            if test < thres:
+                if i == 0 or i == 5 or j == 0 or j == 5:
+                    continue
+                else:
+                    TAG2[i,j] = 0         
+    #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG2)
+
     if np.sum(TAG1) > 8160:
         return None
 
@@ -330,7 +342,8 @@ def drawtag(pts, R, outname, a):
     if len(allcontours) == 0:
         return None
     noedges = np.array([allcontours[i] for i in range(len(allcontours)) if allcontours[i][0][0] != 0 and allcontours[i][0][0] != close.shape[0]-1 and allcontours[i][0][1] != 0 and allcontours[i][0][1] != close.shape[0]-1 ])
-
+    if len(noedges) == 0:
+        return None
     left = min(noedges[:,:, 0])[0] + 1
     right = close.shape[0]-max(noedges[:,:, 0])[0]
     top = min(noedges[:,:, 1])[0] + 1
@@ -371,36 +384,40 @@ def drawtag(pts, R, outname, a):
 
     CLOSE = cv2.resize(close, dsize=(close.shape[0]*6, close.shape[0]*6))
     TAG = cv2.resize(tag, dsize=(close.shape[0]*6, close.shape[0]*6))
-    TAG2 = np.full((6, 6), 255)
+    TAG3 = np.full((6, 6), 255)
     for i in range(6):
         for j in range(6):
-            TAG2[i,j] = np.mean(CLOSE[close.shape[0]*i:close.shape[0]*(i+1), close.shape[0]*j:close.shape[0]*(j+1)])
-            if TAG2[i, j] > 127:
-                TAG2[i,j] = 255
+            TAG3[i,j] = np.mean(CLOSE[close.shape[0]*i:close.shape[0]*(i+1), close.shape[0]*j:close.shape[0]*(j+1)])
+            if TAG3[i, j] > 127:
+                TAG3[i,j] = 255
             if i == 0 or i == 5 or j == 0 or j == 5:
-                TAG2[i,j] = 255        
-            elif TAG2[i,j] < 127:
-                TAG2[i,j] = 0
+                TAG3[i,j] = 255        
+            elif TAG3[i,j] < 127:
+                TAG3[i,j] = 0
 
-    contours, hierarchy = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    areas = [cv2.contourArea(blob) for blob in contours]
-    if len(areas) < 1:
-        TAGs = [TAG1, TAG2]
-        return [TAGs, corners, centroidX, centroidY, OneCM]
+
+    #check for misalignment, if found, add corrected tags
+    kernel = np.ones((3,3),np.uint8)
+    close = cv2.morphologyEx(bwtag, cv2.MORPH_CLOSE, kernel)
+    #cv2.imwrite(outname + "_close_" + str(a) + ".png", close)
     
-    contours.remove(contours[areas.index(max(areas))])
-    areas.remove(areas[areas.index(max(areas))])
-    if len(areas) == 0:
-        TAGs = [TAG1, TAG2]
-        return [TAGs, corners, centroidX, centroidY, OneCM]
-    largest = contours[areas.index(max(areas))]
+    bw2 = np.full((close.shape[0]+20, close.shape[0]+20), 255, dtype = 'uint8')
+    bw2[10:close.shape[0]+10, 10:close.shape[0]+10] = close
+    
+    contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    areas = np.array([cv2.contourArea(blob) for blob in contours])
+    border = contours[np.where(areas == areas.max())[0][0]]
+    contours.remove(border)
+    if len(contours) == 0:
+        return None
+    areas = np.array([cv2.contourArea(blob) for blob in contours])
+    largest = contours[np.where(areas == areas.max())[0][0]]
     #transform polygon (polygon should just be the tag)
     epsilon = 0.02*cv2.arcLength(largest,True)
     approx = cv2.approxPolyDP(largest,epsilon,True)
-
-    Xlen = max(approx[:,:,0])-min(approx[:,:,0])
-    Ylen = max(approx[:,:,1])-min(approx[:,:,1])
-
+    #polygon = cv2.drawContours(cv2.cvtColor(bw2,cv2.COLOR_GRAY2RGB), [approx], -1, (0,255,0), 1, cv2.LINE_AA)
+    #cv2.imwrite(outname + "_approx_" + str(a) + ".png", polygon)
+    
     ###check and correct for tilt
     DISs = [math.sqrt((approx[i][0][0]-approx[i-1][0][0])**2 + (approx[i][0][1]-approx[i-1][0][1])**2) for i in range(len(approx))]
     longest = DISs.index(max(DISs))
@@ -411,51 +428,61 @@ def drawtag(pts, R, outname, a):
         rows,cols = bw2.shape
         M = cv2.getRotationMatrix2D((cols/2,rows/2),angle,1)
         dst = cv2.warpAffine(bw2,M,(cols,rows))
-        bw2 = dst[min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2), min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2)]
-
+        rotated = dst[min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2), min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2)]
+        thres,bw2 = cv2.threshold(rotated,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         #cv2.imwrite(outname + "_rotated_" + str(a) + ".png", bw2)
         CORNERS = [corners, angle]
     
     ###check and correct for scaling and margin
-    
-    
+    contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    areas = np.array([cv2.contourArea(blob) for blob in contours])
+    border = contours[np.where(areas == areas.max())[0][0]]
+    contours.remove(border)
+    if len(contours) == 0:
+        return None
+    areas = np.array([cv2.contourArea(blob) for blob in contours])
+    largest = contours[np.where(areas == areas.max())[0][0]]
+    #transform polygon (polygon should just be the tag)
+    epsilon = 0.02*cv2.arcLength(largest,True)
+    approx = cv2.approxPolyDP(largest,epsilon,True)
     points = np.array(extremepoints(approx))
     Xdis = max(points[:, 0]) - min(points[:,0])
     Ydis = max(points[:, 1]) - min(points[:,1])
     taglength = max(Xdis, Ydis)
 
-    margin = round(taglength/4)
-    top = min(points[:,1]) - margin
-    bottom = bw2.shape[0]-(max(points[:, 1]) + margin)
-    left = min(points[:,0]) - margin
-    right = bw2.shape[0]-(max(points[:, 0]) + margin)
-
-    dimensions = [top, bottom, left, right]
-
-    tag2 = bw2[top:bw2.shape[0]-bottom, left:bw2.shape[0]-right]
-    if tag2.shape[0] != tag2.shape[1]:
-        change = dimensions.index(max(dimensions))
-        if change%2 == 0:
-            dimensions[change] = dimensions[change-1] + dimensions[change-2] - dimensions[change+1]
-        else:
-            dimensions[change] = dimensions[(change+1)%4] + dimensions[(change+2)%4] - dimensions[change-1]
-        
-        tag2 = bw2[dimensions[0]:bw2.shape[0]-dimensions[1], dimensions[2]:bw2.shape[0]-dimensions[3]]
+    tag2 = bw2[min(points[:, 1]):max(points[:, 1])+1, min(points[:, 0]):max(points[:, 0])+1]
+    #correct for size
+    if tag2.shape[0] > tag2.shape[1]:
+        finalx = close.shape[0] + 4 - (close.shape[0]%4)
+        possibleY = [4*i for i in range(int(finalx/4) + 1)]
+        diff = [abs((i-tag2.shape[1])/tag2.shape[1]) for i in possibleY]
+        finaly = possibleY[diff.index(min(diff))]
+        tag2 = cv2.resize(tag2, dsize=(finaly, finalx))
+        tag2 = cv2.resize(tag2, dsize=(finalx, finalx))
+    elif tag2.shape[1] > tag2.shape[0]:
+        finaly = tag2.shape[1] + 4 - (tag2.shape[1]%4)
+        possibleX = [4*i for i in range(int(finaly/4) + 1)]
+        diff = [abs((i-tag2.shape[0])/tag2.shape[0]) for i in possibleX]
+        finalx = possibleX[diff.index(min(diff))]
+        tag2 = cv2.resize(tag2, dsize=(finaly, finalx))
+        tag2 = cv2.resize(tag2, dsize=(finalx, finalx))
 
     #cv2.imwrite(outname + "_cropped_" + str(a) + ".png", tag2)
-    
-    TAG3 = np.full((6, 6), 255)
+    #add margins
+    tag2 = np.concatenate((np.full((int(tag2.shape[0]/4), tag2.shape[1]), 255), tag2, np.full((int(tag2.shape[0]/4), tag2.shape[1]), 255)), axis = 0)
+    tag2 = np.concatenate((np.full((tag2.shape[0], int(tag2.shape[1]/4)), 255), tag2, np.full((tag2.shape[0], int(tag2.shape[1]/4)), 255)), axis = 1)
+    tag2 = np.array(tag2, dtype='uint8')
+    #draw tag
+    TAGadj = cv2.resize(tag2, dsize=(tag2.shape[0]*6, tag2.shape[0]*6))
+    TAG4 = np.full((6, 6), 255)
     for i in range(6):
         for j in range(6):
-            test = np.mean(bwtag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
-            if test < thres:
-                if i == 0 or i == 5 or j == 0 or j == 5:
-                    continue
-                else:
-                    TAG3[i,j] = 0         
+            TAG4[i,j] = np.mean(TAGadj[tag2.shape[0]*i:tag2.shape[0]*(i+1), tag2.shape[0]*j:tag2.shape[0]*(j+1)])
+    TAG4 = np.array(TAG4, dtype='uint8')
+    TAG4 = cv2.adaptiveThreshold(TAG4,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,3,1)
     #cv2.imwrite(outname + "_bwTAG3_" + str(a) + ".png", TAG3)
 
-    TAGs = [TAG1, TAG2, TAG3]
+    TAGs = [TAG1, TAG2, TAG3, TAG4]
     return [TAGs, corners, centroidX, centroidY, OneCM]
 
 def scoretag(TAG, models):
@@ -501,7 +528,7 @@ def main(argv):
     f = 0
     for frame in container.decode(video=0):
         img = frame.to_ndarray(format='bgr24')
-        break
+        #break
         out = outname +  "_" + str(f)
 
         frameData = pd.DataFrame()
@@ -524,8 +551,14 @@ def main(argv):
             if len(raw[0]) > 2:
                 TAG3score = scoretag(raw[0][2], models)[0]
                 TAG3dir = scoretag(raw[0][2], models)[1]
-
-            score = [min(TAG1score[i], TAG2score[i], TAG3score[i], TAG4score[i]) for i in range(len(models))]
+                if len(raw[0]) > 3:
+                    TAG4score = scoretag(raw[0][3], models)[0]
+                    TAG4dir = scoretag(raw[0][3], models)[1]
+                    score = [min(TAG1score[i], TAG2score[i], TAG3score[i], TAG4score[i]) for i in range(len(models))]
+                else:
+                    score = [min(TAG1score[i], TAG2score[i], TAG3score[i]) for i in range(len(models))]
+            else:
+                score = [min(TAG1score[i], TAG2score[i]) for i in range(len(models))]
 
 #fix me!
             dir = []
