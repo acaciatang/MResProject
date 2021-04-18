@@ -307,9 +307,9 @@ def drawtag(pts, R, outname, a):
                 TAG1[i,j] = 0
             if i == 0 or i == 5 or j == 0 or j == 5 or TAG1[i, j] > 128:
                 TAG1[i,j] = 255
-    cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
+    #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
 
-    if np.sum(TAG1) < 1020:
+    if np.sum(TAG1) > 8160:
         return None
 
     corners = copy.deepcopy(vertexes)
@@ -369,7 +369,6 @@ def drawtag(pts, R, outname, a):
         close = cv2.resize(close, dsize=(finaly, finalx))
         close = cv2.resize(close, dsize=(finalx, finalx))
 
-###########
     CLOSE = cv2.resize(close, dsize=(close.shape[0]*6, close.shape[0]*6))
     TAG = cv2.resize(tag, dsize=(close.shape[0]*6, close.shape[0]*6))
     TAG2 = np.full((6, 6), 255)
@@ -382,7 +381,7 @@ def drawtag(pts, R, outname, a):
                 TAG2[i,j] = 255        
             elif TAG2[i,j] < 127:
                 TAG2[i,j] = 0
-################
+
     contours, hierarchy = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     areas = [cv2.contourArea(blob) for blob in contours]
     if len(areas) < 1:
@@ -391,6 +390,9 @@ def drawtag(pts, R, outname, a):
     
     contours.remove(contours[areas.index(max(areas))])
     areas.remove(areas[areas.index(max(areas))])
+    if len(areas) == 0:
+        TAGs = [TAG1, TAG2]
+        return [TAGs, corners, centroidX, centroidY, OneCM]
     largest = contours[areas.index(max(areas))]
     #transform polygon (polygon should just be the tag)
     epsilon = 0.02*cv2.arcLength(largest,True)
@@ -411,7 +413,7 @@ def drawtag(pts, R, outname, a):
         dst = cv2.warpAffine(bw2,M,(cols,rows))
         bw2 = dst[min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2), min(Xdiff, Ydiff)+2:dst.shape[0]-(min(Xdiff, Ydiff)+2)]
 
-        cv2.imwrite(outname + "_rotated_" + str(a) + ".png", bw2)
+        #cv2.imwrite(outname + "_rotated_" + str(a) + ".png", bw2)
         CORNERS = [corners, angle]
     
     ###check and correct for scaling and margin
@@ -451,19 +453,9 @@ def drawtag(pts, R, outname, a):
                     continue
                 else:
                     TAG3[i,j] = 0         
-    cv2.imwrite(outname + "_bwTAG3_" + str(a) + ".png", TAG3)
+    #cv2.imwrite(outname + "_bwTAG3_" + str(a) + ".png", TAG3)
 
-    TAG4 = np.full((6, 6), 255)
-    for i in range(6):
-        for j in range(6):
-            TAG2[i,j] = np.mean(bwtag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
-            if TAG2[i, j] < thres - 16:
-                TAG2[i,j] = 0
-            if i == 0 or i == 5 or j == 0 or j == 5 or TAG2[i, j] > 128:
-                TAG4[i,j] = 255
-    cv2.imwrite(outname + "_bwTAG4_" + str(a) + ".png", TAG4)
-
-    TAGs = [TAG1, TAG2, TAG3, TAG4]
+    TAGs = [TAG1, TAG2, TAG3]
     return [TAGs, corners, centroidX, centroidY, OneCM]
 
 def scoretag(TAG, models):
@@ -478,42 +470,6 @@ def scoretag(TAG, models):
         direction.append(diff.index(min(diff)))
 
     return [difference, direction]
-
-def matchtags(df): #df is a pandas dataframe that contains the scores, columns are models, rows are tags
-    # generate dictionary of preferences based on all tags returned from IDTags
-    modellist = df.columns.to_list()
-    taglist = df.index.to_list()
-    
-    modelscores = [df[x].values.tolist() for x in df.columns]
-    modelranks = [[sorted(model).index(i) for i in model]for model in modelscores]
-    tagsranked = []
-    for i in range(len(modellist)):
-        zipped_lists = zip(modelranks[i], taglist)
-        sorted_zipped_lists = sorted(zipped_lists)
-        tagsranked.append([element for _, element in sorted_zipped_lists])
-    modelpref = {modellist[i]: tagsranked[i] for i in range(len(modellist))}
-
-    tagscores = df.values.tolist()
-    tagranks = [[sorted(tag).index(i) for i in tag]for tag in tagscores]
-    modelsranked = []
-    for i in range(len(taglist)):
-        zipped_lists = zip(tagranks[i], modellist)
-        sorted_zipped_lists = sorted(zipped_lists)
-        modelsranked.append([element for _, element in sorted_zipped_lists])
-    tagpref = {taglist[i]: modelsranked[i] for i in range(len(taglist))}
-
-    capacity = {h: 1 for h in modelpref}
-
-    game = HospitalResident.create_from_dictionaries(tagpref, modelpref, capacity)
-    solution = game.solve()
-    assert game.check_validity(), "No valid solution"
-    assert game.check_stability(), "No stable solution"
-
-    #matched_tags = [str(tags) for _, [tags] in solution.items()]
-    #unmatched_tags = set(tagpref.keys()) - set(matched_tags)
-    #print("Tags without matches: ", unmatched_tags)
-
-    return solution
 
 def main(argv):
     """ Main entry point of the program """
@@ -565,10 +521,9 @@ def main(argv):
             TAG1dir = scoretag(raw[0][0], models)[1]
             TAG2score = scoretag(raw[0][1], models)[0]
             TAG2dir = scoretag(raw[0][1], models)[1]
-            TAG3score = scoretag(raw[0][2], models)[0]
-            TAG3dir = scoretag(raw[0][2], models)[1]
-            TAG4score = scoretag(raw[0][3], models)[0]
-            TAG4dir = scoretag(raw[0][3], models)[1]
+            if len(raw[0]) > 2:
+                TAG3score = scoretag(raw[0][2], models)[0]
+                TAG3dir = scoretag(raw[0][2], models)[1]
 
             score = [min(TAG1score[i], TAG2score[i], TAG3score[i], TAG4score[i]) for i in range(len(models))]
 
