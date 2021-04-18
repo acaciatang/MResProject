@@ -206,8 +206,8 @@ def drawtag(pts, R, outname, a):
     points = lrtb(largest)
     POIs = [int(not (pts[2]-1 in p or 0 in p or pts[3]-1 in p)) for p in points]
     
-    #if sum(POIs) < 2:
-    #    return None
+    if sum(POIs) < 2:
+        return None
     
     # get threshold within largest blob
     croppedblur = cv2.GaussianBlur(cropped,(5,5),0)
@@ -233,8 +233,8 @@ def drawtag(pts, R, outname, a):
 
     vertexes = closesttosides(approx)
     test = np.array(vertexes)
-    #if len(np.unique(test, axis = 0)) < 4:
-    #    return None
+    if len(np.unique(test, axis = 0)) < 4:
+        return None
     
     edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
     edge = math.floor(min(edges))
@@ -283,46 +283,34 @@ def drawtag(pts, R, outname, a):
                 tag = tags[average.index(max(average))]
 
     if tag.shape[0] != tag.shape[1]:
-        edge = max(tag.shape[0], tag.shape[1]) #was min
+        edge = min(tag.shape[0], tag.shape[1]) #was min
         tag = dst[0:edge, 0:edge]
     
     #cv2.imwrite(outname + "_tag_" + str(a) + ".png", tag)
     
-    #if edge > 40:
-    #    return None
+    if edge > 40:
+        return None
 
     #draw tag
     thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
 
     #enlarge
-    bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6), interpolation = cv2.INTER_AREA)
+    bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
     #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
-    graytag2 = cv2.resize(tag, (edge*6, edge*6))
 
     TAG1 = np.full((6, 6), 255)
     for i in range(6):
         for j in range(6):
-            test = np.mean(bwtag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
-            if test < thres:
-                if i == 0 or i == 5 or j == 0 or j == 5:
-                    continue
-                else:
-                    TAG1[i,j] = 0         
+            TAG1[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
+            if TAG1[i, j] < 127:
+                TAG1[i,j] = 0
+            if i == 0 or i == 5 or j == 0 or j == 5 or TAG1[i, j] > 128:
+                TAG1[i,j] = 255
     cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
 
-    TAG2 = np.full((6, 6), 255)
-    for i in range(6):
-        for j in range(6):
-            TAG2[i,j] = np.mean(graytag2[edge*i:edge*(i+1), edge*j:edge*(j+1)])
-            if TAG2[i, j] < thres - 16:
-                TAG2[i,j] = 0
-            if i == 0 or i == 5 or j == 0 or j == 5 or TAG2[i, j] > 128:
-                TAG2[i,j] = 255
-    cv2.imwrite(outname + "_bwTAG2_" + str(a) + ".png", TAG2)
-
-    #if np.sum(TAG1) < 1020 and np.sum(TAG2) < 1020:
-    #    return None
+    if np.sum(TAG1) < 1020:
+        return None
 
     corners = copy.deepcopy(vertexes)
     corners = convert(corners, pts[0], pts[1])
@@ -332,15 +320,15 @@ def drawtag(pts, R, outname, a):
     centroidY = sum(Ys)/4
     
     #check for misalignment, if found, correct
-    kernel = np.ones((3,3),np.uint8)
+    kernel = np.ones((4,4),np.uint8)
     close = cv2.morphologyEx(bwtag, cv2.MORPH_CLOSE, kernel)
     #cv2.imwrite(outname + "_close_" + str(a) + ".png", close)
     
     #correct for margin
     contours, hierarchy = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     allcontours = [contours[i][j] for i in range(len(contours)) for j in range(len(contours[i]))]
-    #if len(allcontours) == 0:
-    #    return None
+    if len(allcontours) == 0:
+        return None
     noedges = np.array([allcontours[i] for i in range(len(allcontours)) if allcontours[i][0][0] != 0 and allcontours[i][0][0] != close.shape[0]-1 and allcontours[i][0][1] != 0 and allcontours[i][0][1] != close.shape[0]-1 ])
 
     left = min(noedges[:,:, 0])[0] + 1
@@ -350,44 +338,66 @@ def drawtag(pts, R, outname, a):
 
     if left > right:
         close = np.concatenate((close, np.full((close.shape[0], left-right), 255)), axis = 1)
-        tag = np.concatenate((tag, np.full((close.shape[0], left-right), 255)), axis = 1)
+        #tag = np.concatenate((tag, np.full((close.shape[0], left-right), 255)), axis = 1)
     elif right > left:
         close = np.concatenate((np.full((close.shape[0], right-left), 255), close), axis = 1)
-        tag = np.concatenate((np.full((close.shape[0], right-left), 255), tag), axis = 1)
+        #tag = np.concatenate((np.full((close.shape[0], right-left), 255), tag), axis = 1)
 
     if top > bottom:
         close = np.concatenate((close, np.full((top-bottom, close.shape[1]), 255)), axis = 0)
-        tag = np.concatenate((tag, np.full((top-bottom, close.shape[1]), 255)), axis = 0)
+        #tag = np.concatenate((tag, np.full((top-bottom, close.shape[1]), 255)), axis = 0)
     elif bottom > top:
         close = np.concatenate((np.full((bottom-top, close.shape[1]), 255), close), axis = 0)
-        tag = np.concatenate((np.full((bottom-top, close.shape[1]), 255), tag), axis = 0)
+        #tag = np.concatenate((np.full((bottom-top, close.shape[1]), 255), tag), axis = 0)
     
     close = np.array(close, dtype='uint8')
-    tag = np.array(tag, dtype='uint8')
-    cv2.imwrite(outname + "_close_" + str(a) + ".png", close)
-    cv2.imwrite(outname + "_tag_" + str(a) + ".png", tag)
     #cv2.imwrite(outname + "_close_" + str(a) + ".png", close)
     
     #correct for size
-    if close.shape[0] != close.shape[1]:
-        close = cv2.resize(close, dsize=(max(close.shape[0], close.shape[1]), max(close.shape[0], close.shape[1])))
-        tag = cv2.resize(tag, dsize=(max(close.shape[0], close.shape[1]), max(close.shape[0], close.shape[1])))
-        
+    if close.shape[0] > close.shape[1]:
+        finalx = close.shape[0] + 6 - (close.shape[0]%6)
+        possibleY = [6*i for i in range(int(finalx/6) + 1)]
+        diff = [abs((i-close.shape[1])/close.shape[1]) for i in possibleY]
+        finaly = possibleY[diff.index(min(diff))]
+        close = cv2.resize(close, dsize=(finaly, finalx))
+        close = cv2.resize(close, dsize=(finalx, finalx))
+    elif close.shape[1] > close.shape[0]:
+        finaly = close.shape[1] + 6 - (close.shape[1]%6)
+        possibleX = [6*i for i in range(int(finaly/6) + 1)]
+        diff = [abs((i-close.shape[0])/close.shape[0]) for i in possibleX]
+        finalx = possibleX[diff.index(min(diff))]
+        close = cv2.resize(close, dsize=(finaly, finalx))
+        close = cv2.resize(close, dsize=(finalx, finalx))
 
 ###########
     CLOSE = cv2.resize(close, dsize=(close.shape[0]*6, close.shape[0]*6))
     TAG = cv2.resize(tag, dsize=(close.shape[0]*6, close.shape[0]*6))
-    TAG1 = np.full((6, 6), 255)
+    TAG2 = np.full((6, 6), 255)
     for i in range(6):
         for j in range(6):
-            test = np.mean(CLOSE[edge*i:edge*(i+1), edge*j:edge*(j+1)])
-            if test < 127:
-                if i == 0 or i == 5 or j == 0 or j == 5:
-                    continue
-                else:
-                    TAG1[i,j] = 0         
-    cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
+            TAG2[i,j] = np.mean(CLOSE[close.shape[0]*i:close.shape[0]*(i+1), close.shape[0]*j:close.shape[0]*(j+1)])
+            if TAG2[i, j] > 127:
+                TAG2[i,j] = 255
+            if i == 0 or i == 5 or j == 0 or j == 5:
+                TAG2[i,j] = 255        
+            elif TAG2[i,j] < 127:
+                TAG2[i,j] = 0
 ################
+    contours, hierarchy = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    areas = [cv2.contourArea(blob) for blob in contours]
+    if len(areas) < 1:
+        TAGs = [TAG1, TAG2]
+        return [TAGs, corners, centroidX, centroidY, OneCM]
+    
+    contours.remove(contours[areas.index(max(areas))])
+    areas.remove(areas[areas.index(max(areas))])
+    largest = contours[areas.index(max(areas))]
+    #transform polygon (polygon should just be the tag)
+    epsilon = 0.02*cv2.arcLength(largest,True)
+    approx = cv2.approxPolyDP(largest,epsilon,True)
+
+    Xlen = max(approx[:,:,0])-min(approx[:,:,0])
+    Ylen = max(approx[:,:,1])-min(approx[:,:,1])
 
     ###check and correct for tilt
     DISs = [math.sqrt((approx[i][0][0]-approx[i-1][0][0])**2 + (approx[i][0][1]-approx[i-1][0][1])**2) for i in range(len(approx))]
@@ -405,6 +415,8 @@ def drawtag(pts, R, outname, a):
         CORNERS = [corners, angle]
     
     ###check and correct for scaling and margin
+    
+    
     points = np.array(extremepoints(approx))
     Xdis = max(points[:, 0]) - min(points[:,0])
     Ydis = max(points[:, 1]) - min(points[:,1])
