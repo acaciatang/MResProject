@@ -289,7 +289,7 @@ def drawtag(pts, R, outname, a):
     
     #cv2.imwrite(outname + "_tag_" + str(a) + ".png", tag)
     
-    if edge > 40:
+    if edge < 6 or edge > 40:
         return None
 
     #draw tag
@@ -405,9 +405,8 @@ def drawtag(pts, R, outname, a):
     bw2[10:close.shape[0]+10, 10:close.shape[0]+10] = close
     
     contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    areas = np.array([cv2.contourArea(blob) for blob in contours])
-    border = contours[np.where(areas == areas.max())[0][0]]
-    contours.remove(border)
+    areas = [cv2.contourArea(blob) for blob in contours]
+    contours.pop(areas.index(max(areas)))
     if len(contours) == 0:
         return None
     areas = np.array([cv2.contourArea(blob) for blob in contours])
@@ -435,9 +434,10 @@ def drawtag(pts, R, outname, a):
     
     ###check and correct for scaling and margin
     contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    areas = np.array([cv2.contourArea(blob) for blob in contours])
-    border = contours[np.where(areas == areas.max())[0][0]]
-    contours.remove(border)
+    areas = [cv2.contourArea(blob) for blob in contours]
+    if len(areas) == 0:
+        return None
+    contours.pop(areas.index(max(areas)))
     if len(contours) == 0:
         return None
     areas = np.array([cv2.contourArea(blob) for blob in contours])
@@ -454,15 +454,15 @@ def drawtag(pts, R, outname, a):
     #correct for size
     if tag2.shape[0] > tag2.shape[1]:
         finalx = close.shape[0] + 4 - (close.shape[0]%4)
-        possibleY = [4*i for i in range(int(finalx/4) + 1)]
+        possibleY = [4*i for i in range(1, int(finalx/4) + 1)]
         diff = [abs((i-tag2.shape[1])/tag2.shape[1]) for i in possibleY]
         finaly = possibleY[diff.index(min(diff))]
         tag2 = cv2.resize(tag2, dsize=(finaly, finalx))
         tag2 = cv2.resize(tag2, dsize=(finalx, finalx))
     elif tag2.shape[1] > tag2.shape[0]:
         finaly = tag2.shape[1] + 4 - (tag2.shape[1]%4)
-        possibleX = [4*i for i in range(int(finaly/4) + 1)]
-        diff = [abs((i-tag2.shape[0])/tag2.shape[0]) for i in possibleX]
+        possibleX = [4*i for i in range(1, int(finaly/4) + 1)]
+        diff = [abs((i-tag2.shape[0])/tag2.shape[0]) for i in (possibleX)]
         finalx = possibleX[diff.index(min(diff))]
         tag2 = cv2.resize(tag2, dsize=(finaly, finalx))
         tag2 = cv2.resize(tag2, dsize=(finalx, finalx))
@@ -583,7 +583,7 @@ def main(argv):
         f = f+1
 
     output = wrangled.rename(columns={0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm', 6:'test'})
-    output.to_csv(path_or_buf = outname + ".csv", na_rep = "NA", index = False)
+    output.to_csv(path_or_buf = outname + "_raw.csv", na_rep = "NA", index = False)
     return 0
 
 if __name__ == "__main__": 

@@ -17,6 +17,7 @@ import math
 
 #code
 def getCoor(outname, id, thres):
+    """ Reads csvfile and fills in missing data within a certain time range for specified ID. """
     csvfile = outname + ".csv"
     all = pd.read_csv(csvfile)
     subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]]
@@ -49,6 +50,7 @@ def getCoor(outname, id, thres):
     return subset.reset_index(drop=True)
 
 def getallCoor(outname, thres):
+    """Fills in coordinates for all IDs."""
     csvfile = outname + ".csv"
     all = pd.read_csv(csvfile)
     IDs = pd.DataFrame(all["ID"].value_counts())
@@ -61,6 +63,7 @@ def getallCoor(outname, thres):
     return allCoors
 
 def chooseColour(i, gap):
+    """ Choose unique colour for each ID. """
     fullList = mcolors.CSS4_COLORS
     names = list(fullList.keys())
     colour = [i for i in fullList[names[i*gap]]]
@@ -70,6 +73,7 @@ def chooseColour(i, gap):
     return (b, g, r) #opencv uses BGR for some god forsaken reason
 
 def drawLines(allCoors, FRAME, frameNum):
+    """ Draws all lines that should be there for one frame """
     frame = FRAME
     for i in range(len(allCoors)): #for each ID
         isClosed = False #don't want polygon
@@ -138,7 +142,7 @@ def main(argv):
         filename = files[int(iter)-1]
     
     outname = os.path.splitext(os.path.basename(filename))[0]
-    allCoors = getallCoor(outname, thres = 10)
+    allCoors = getallCoor(outname, thres = 30)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object
