@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.colors as mcolors
 import math
-import copy
 
 #code
 def getCoor(outname, id, thres):
@@ -83,7 +82,7 @@ def drawLines(allCoors, FRAME, frameNum):
         # Line thickness of 2 px 
         thickness = 3
 
-        df = copy.deepcopy(allCoors[i])
+        df = allCoors[i]
         df = df[df['frame'] <= frameNum]
         if df.empty == True: # nothing to plot in this frame because there is nothing
             drew = frame
@@ -92,7 +91,7 @@ def drawLines(allCoors, FRAME, frameNum):
             drew = frame
             continue
         test = frameNum - int(df[df['frame'] == frameNum].index.values[0]) #fix me in Wrangled: should only have one entry per ID per frame!
-        df['gap'] = [int(df.loc['frame', i] - i) != test for i in df.index]
+        df['gap'] = [int(df['frame'][i] - i) != test for i in df.index]
         toPlot = df.loc[df['gap'] == False, ["centroidX", "centroidY"]]
 
         pts = np.array(toPlot)
