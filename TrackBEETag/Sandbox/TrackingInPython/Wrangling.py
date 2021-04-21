@@ -36,7 +36,7 @@ def reshape(raw, taglist):
 
 def IDdistance(found, ID, thres = 50):
     subset = found.loc[ID]
-    if subset.shape[0] < math.floor(max([f[1] for f in found.index]))/10):
+    if subset.shape[0] < math.floor(max([f[1] for f in found.index])/10):
         return None
     frames = list(subset.index)
     distance = [math.sqrt((subset.loc[frames[f], 'X'] - subset.loc[frames[f-1], 'X'])**2 + (subset.loc[frames[f], 'Y'] - subset.loc[frames[f-1], 'Y'])**2) for f in range(len(frames))]
@@ -85,8 +85,10 @@ def wrangle(outname, thres = 50):
         taglist = [59,68,74,75,103,104,135,137,180,211,274,304,311,312,324,325,330,331,392,393,413,502,544,613,637,651,696,707,792,1104,1112,1465,1543,1759,1846,1903,2056,2856,2945,3163]
     wrangled = copy.deepcopy(raw)
     print('Done!')
-    print()
+    print('Reshaping...')
     reshaped = reshape(raw, taglist)
+    print('Done!')
+    print('Wrangling...')
     holder = copy.deepcopy(reshaped)
     found = reshaped.dropna(axis = 0)
     foundtags = set([i[0] for i in found.index])
@@ -110,9 +112,9 @@ def wrangle(outname, thres = 50):
         if len(ids) == 0:
             wrangled.iat[int(row[2]), 1] = None
         else:
+            testpts = [previous.loc[id].iloc[-1] if len(previous.loc[id].shape) > 1 else previous.loc[id] for id in ids]
+            test = [math.sqrt((row[0] - testpts[i][0])**2 + (row[1] - testpts[i][1])**2)/(row.name[1]-testpts[i].name) for i in range(len(testpts))]
             if min(test) < thres:
-                testpts = [previous.loc[id].iloc[-1] if len(previous.loc[id].shape) > 1 else previous.loc[id] for id in ids]
-                test = [math.sqrt((row[0] - testpts[i][0])**2 + (row[1] - testpts[i][1])**2)/(row.name[1]-testpts[i].name) for i in range(len(testpts))]
                 wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
             else:
                 wrangled.iat[int(row[2]), 1] = None
