@@ -105,15 +105,17 @@ def wrangle(outname, thres = 50):
     for r in range(sus.shape[0]):
         row = sus.iloc[r]
         previous = good.loc[(slice(None), [i for i in range(int(row.name[1]))]), slice(None)]
-        ids = list(set([i[0] for i in previous.index]))
-        testpts = [previous.loc[id].iloc[-1] if len(previous.loc[id].shape) > 1 else previous.loc[id] for id in ids]
-        test = [math.sqrt((row[0] - testpts[i][0])**2 + (row[1] - testpts[i][1])**2)/(row.name[1]-testpts[i].name) for i in range(len(testpts))]
-        if len(test) == 0:
+        current = good.loc[(slice(None), int(row.name[1])), slice(None)]
+        ids = list(set([i[0] for i in previous.index])-set([i[0] for i in current.index]))
+        if len(ids) == 0:
             wrangled.iat[int(row[2]), 1] = None
-        elif min(test) < thres:
-            wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
         else:
-            wrangled.iat[int(row[2]), 1] = None
+            if min(test) < thres:
+                testpts = [previous.loc[id].iloc[-1] if len(previous.loc[id].shape) > 1 else previous.loc[id] for id in ids]
+                test = [math.sqrt((row[0] - testpts[i][0])**2 + (row[1] - testpts[i][1])**2)/(row.name[1]-testpts[i].name) for i in range(len(testpts))]
+                wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
+            else:
+                wrangled.iat[int(row[2]), 1] = None
     
     wrangled = wrangled.dropna(axis = 0)
     wrangled.to_csv(path_or_buf = outname + ".csv", na_rep = "NA", index = True)
