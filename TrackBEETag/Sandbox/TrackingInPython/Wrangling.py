@@ -36,7 +36,7 @@ def reshape(raw, taglist):
 
 def IDdistance(found, ID, thres = 50):
     subset = found.loc[ID]
-    if subset.shape[0] < 2:
+    if subset.shape[0] < math.floor(max([f[1] for f in found.index]))/10):
         return None
     frames = list(subset.index)
     distance = [math.sqrt((subset.loc[frames[f], 'X'] - subset.loc[frames[f-1], 'X'])**2 + (subset.loc[frames[f], 'Y'] - subset.loc[frames[f-1], 'Y'])**2) for f in range(len(frames))]
