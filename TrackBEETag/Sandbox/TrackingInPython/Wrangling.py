@@ -72,7 +72,7 @@ def IDdistance(found, ID, thres = 50):
 
 def wrangle(outname, thres = 50):
     print('Reading file...')
-    raw = pd.read_csv(outname + '.csv')
+    raw = pd.read_csv(outname + '_raw.csv')
     if outname[0] == 'A':
         taglist = [68,118,137,173,289,304,325,365,392,420,437,512,559,596,613,666,696,765,862,1112,1150,1203,1492,1730,1966,2091,2327,2452,2511,2932,2992,3067,3261,3360,3415,3486,3570,3757,3908,4015]
     elif outname[0] == 'B':
