@@ -20,4 +20,4 @@ for i = 1:(ntags^2)
 end
 % Prints directly to a pdf (and therefore scalable) image of 100 tags
 % instead of printing to figur
-print(strcat('tags.pdf'), '-dpdf', '-bestfit');
+print(strcat('tags.pdf'), '-dpdf', '-fillpage');
