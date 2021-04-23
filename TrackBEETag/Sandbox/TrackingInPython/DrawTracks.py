@@ -26,7 +26,7 @@ def getCoor(outname, id, thres):
     subset = subset.append(missing, ignore_index=True)
 
     for i in range(subset.shape[0]-1):
-        if 1 < subset["frame"][i+1] - subset["frame"][i] < thres:
+        if 1 < subset["frame"][i+1] - subset["frame"][i] < thres and math.sqrt((subset["centroidX"][i+1] - subset["centroidX"][i])**2 + (subset["centroidY"][i+1] - subset["centroidY"][i])**2) < 200: #threshold by time and distance
             addframe = pd.DataFrame(list(range(int(subset["frame"][i] + 1), int(subset["frame"][i+1]))))
             addX = pd.DataFrame([subset["centroidX"][i] + (subset["centroidX"][i+1]-subset["centroidX"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
             addY = pd.DataFrame([subset["centroidY"][i] + (subset["centroidY"][i+1]-subset["centroidY"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
@@ -142,7 +142,7 @@ def main(argv):
         filename = files[int(iter)-1]
     
     outname = os.path.splitext(os.path.basename(filename))[0]
-    allCoors = getallCoor(outname, thres = 30)
+    allCoors = getallCoor(outname, thres = 150)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object

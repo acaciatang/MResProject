@@ -18,7 +18,6 @@ import collections
 #import matplotlib.pyplot as plt
 
 def reshapeframe(raw, frameNum, taglist):
-    """Reshapes data into pandas dataframe with two indexes: ID and frame. For one frame."""
     frameData = raw[raw["frame"] == frameNum]
     iterables = [taglist, [frameNum]]
     nested = pd.MultiIndex.from_product(iterables, names=["ID", "frame"])
@@ -31,16 +30,14 @@ def reshapeframe(raw, frameNum, taglist):
     return frameSeries
 
 def reshape(raw, taglist):
-    """Combines results from reshapeframe()."""
     reshaped = [reshapeframe(raw, f, taglist) for f in list(pd.unique(raw['frame']))]
     reshaped = pd.concat(reshaped, ignore_index=False)
     return reshaped
 
-def IDdistance(found, ID, thres = 100, thres2 = 300):
-    """Separates into 'real' and 'fake' data based on change in speed and distance."""
+def IDdistance(found, ID, thres = 50, thres2 = 100):
     subset = found.loc[ID]
-    #if subset.shape[0] < math.floor(max([f[1] for f in found.index])/10):
-    #    return None
+    if subset.shape[0] < 2:
+        return None
     frames = list(subset.index)
     distance = [math.sqrt((subset.loc[frames[f], 'X'] - subset.loc[frames[f-1], 'X'])**2 + (subset.loc[frames[f], 'Y'] - subset.loc[frames[f-1], 'Y'])**2) for f in range(len(frames))]
     distance[0] = 0
@@ -50,7 +47,7 @@ def IDdistance(found, ID, thres = 100, thres2 = 300):
     base = 0
     cat = []
     for i in range(len(speed)):
-        if speed[i] > thres or distance[i] > thres2: # too fast or too far
+        if speed[i] > thres or distance[i] > thres2:
             base = base + 1
         cat.append(base)
     
@@ -60,9 +57,9 @@ def IDdistance(found, ID, thres = 100, thres2 = 300):
     noZero.pop(0)
     for c in noZero:
         start = subset.iloc[cat.index(c)]
-        test = [math.sqrt((start[0] - end[i][0])**2 + (start[1] - end[i][1])**2)/(c-i) for i in range(c)] #speed
-        test2 = [(start[0] - end[i][0])**2 + (start[1] - end[i][1])**2 for i in range(c)] #speed
-        if min(test) < thres and test2[test.index(min(test))] < thres2: #speed similar enough
+        test = [math.sqrt((start[0] - end[i][0])**2 + (start[1] - end[i][1])**2)/(c-i) for i in range(c)]
+        minimum = test.index(min(test))
+        if test[minimum] < thres and math.sqrt((start[0] - end[minimum][0])**2 + (start[1] - end[minimum][1])**2) < thres2:
             categories[c] = categories[test.index(min(test))]
             cat = [categories[c] if i == c else i for i in cat]
 
@@ -74,7 +71,7 @@ def IDdistance(found, ID, thres = 100, thres2 = 300):
             
     return [frames, cat]
 
-def wrangle(outname, thres = 50, thres2 = 200):
+def wrangle(outname, thres = 50, thres2 = 100):
     print('Reading file...')
     raw = pd.read_csv(outname + '_raw.csv')
     if outname[0] == 'A':
@@ -87,15 +84,10 @@ def wrangle(outname, thres = 50, thres2 = 200):
         taglist = [59,75,104,135,211,237,324,341,361,377,413,436,456,510,579,609,637,664,681,720,802,844,910,1074,1104,1403,1620,1718,1799,1903,2006,2072,2192,2242,2355,2856,2880,3163,3358,3388]
     elif outname[0] == 'P':
         taglist = [59,68,74,75,103,104,135,137,180,211,274,304,311,312,324,325,330,331,392,393,413,502,544,613,637,651,696,707,792,1104,1112,1465,1543,1759,1846,1903,2056,2856,2945,3163]
-    elif outname[0] == 't':
-        taglist = [74,121,137,151,162,180,181,186,220,222,237,311,312,341,393,402,421,427,456,467,502,534,574,596,626,645,664,681,696,697,720,765,781,794,824,862,985,1074,1077,1419,1486,1797,1846,1875,1947,1966,2192,2211,2908,2915]
-
     wrangled = copy.deepcopy(raw)
     print('Done!')
-    print('Reshaping...')
+    print()
     reshaped = reshape(raw, taglist)
-    print('Done!')
-    print('Wrangling...')
     holder = copy.deepcopy(reshaped)
     found = reshaped.dropna(axis = 0)
     foundtags = set([i[0] for i in found.index])
@@ -114,19 +106,21 @@ def wrangle(outname, thres = 50, thres2 = 200):
     for r in range(sus.shape[0]):
         row = sus.iloc[r]
         previous = good.loc[(slice(None), [i for i in range(int(row.name[1]))]), slice(None)]
-        current = good.loc[(slice(None), int(row.name[1])), slice(None)]
-        ids = list(set([i[0] for i in previous.index])-set([i[0] for i in current.index]))
-        wrangled.iat[int(row[2]), 1] = None
-
+        goodframes = list(set([i[0] for i in good.index]))
+        if int(row.name[1]) in goodframes:
+            current = good.loc[(slice(None), int(row.name[1])), slice(None)]
+            ids = list(set([i[0] for i in previous.index])-set([i[0] for i in current.index]))
+        else:
+            ids = list(set([i[0] for i in previous.index]))
+        
         if len(ids) == 0:
             wrangled.iat[int(row[2]), 1] = None
         else:
             testpts = [previous.loc[id].iloc[-1] if len(previous.loc[id].shape) > 1 else previous.loc[id] for id in ids]
             test = [math.sqrt((row[0] - testpts[i][0])**2 + (row[1] - testpts[i][1])**2)/(row.name[1]-testpts[i].name) for i in range(len(testpts))]
-            if min(test) < thres:
-                test2 = ((row[0] - testpts[test.index(min(test))][0])**2 + (row[1] - testpts[test.index(min(test))][1])**2)
-                if test2 < thres2:
-                    wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
+            minimum = test.index(min(test))
+            if test[minimum] < thres and math.sqrt((row[0] - testpts[minimum][0])**2 + (row[1] - testpts[minimum][1])**2) < thres2:
+                wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
             else:
                 wrangled.iat[int(row[2]), 1] = None
     
@@ -149,7 +143,6 @@ def main(argv):
         iter = os.getenv('PBS_ARRAY_INDEX')
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
-    
     outname = os.path.splitext(os.path.basename(filename))[0]
     return wrangle(outname)
 
