@@ -34,11 +34,12 @@ def reshape(raw, taglist):
     reshaped = pd.concat(reshaped, ignore_index=False)
     return reshaped
 
-def IDdistance(found, ID, thres = 50, thres2 = 100):
+def IDdistance(found, ID, thresf = 40, thres = 50, thres2 = 100):
     subset = found.loc[ID]
-    if subset.shape[0] < 2:
-        return None
     frames = list(subset.index)
+    if subset.shape[0] < thresf:
+        cat = [False for i in range(subset.shape[0])]
+        return [frames, cat]
     distance = [math.sqrt((subset.loc[frames[f], 'X'] - subset.loc[frames[f-1], 'X'])**2 + (subset.loc[frames[f], 'Y'] - subset.loc[frames[f-1], 'Y'])**2) for f in range(len(frames))]
     distance[0] = 0
     time = [(frames[f] - frames[f-1]) for f in range(len(frames))]
@@ -65,7 +66,7 @@ def IDdistance(found, ID, thres = 50, thres2 = 100):
 
     table = collections.Counter(cat)
     counts = [table[i] for i in range(len(table))]
-    cat = [c == counts.index(max(counts)) for c in cat]
+    cat = [c == counts.index(max(counts)) for c in cat] # True is good, False is sus
     #subset['cat'] = cat
     #subset.to_csv(path_or_buf = "324.csv", na_rep = "NA", index = True)
             

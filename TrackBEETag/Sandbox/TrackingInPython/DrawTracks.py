@@ -62,11 +62,11 @@ def getallCoor(outname, thres):
     
     return allCoors
 
-def chooseColour(i, gap):
+def chooseColour(i):
     """ Choose unique colour for each ID. """
     fullList = mcolors.CSS4_COLORS
-    names = list(fullList.keys())
-    colour = [i for i in fullList[names[i*gap]]]
+    names = ['lightcoral', 'silver', 'royalblue', 'pink', 'plum', 'orangered', 'navy', 'lightgreen', 'purple', 'mediumvioletred', 'tomato', 'maroon','slateblue', 'red', 'saddlebrown', 'sandybrown', 'peru', 'palegreen', 'burlywood', 'goldenrod', 'lime', 'darkkhaki', 'orange', 'yellow', 'yellowgreen', 'olivedrab', 'green', 'darkgreen', 'darkseagreen', 'turquise', 'teal', 'aqua', 'steelblue', 'dodgerblue', 'blue', 'deepskblue', 'blueviolet', 'magenta', 'deeppink', 'crimson']
+    colour = [c for c in fullList[names[i]]]
     r = int(colour[1] + colour[2], 16)
     g = int(colour[3] + colour[4], 16)
     b = int(colour[5] + colour[6], 16)
@@ -74,11 +74,11 @@ def chooseColour(i, gap):
 
 def drawLines(allCoors, FRAME, frameNum):
     """ Draws all lines that should be there for one frame """
-    frame = FRAME
+    frame = cv2.cvtColor(FRAME[:,:,2],cv2.COLOR_GRAY2RGB)
     for i in range(len(allCoors)): #for each ID
         isClosed = False #don't want polygon
         # choose colour 
-        color = chooseColour(i, math.floor(148/len(allCoors)))
+        color = chooseColour(i)
         # Line thickness of 2 px 
         thickness = 3
 
