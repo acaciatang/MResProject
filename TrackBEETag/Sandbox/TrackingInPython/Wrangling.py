@@ -18,6 +18,7 @@ import collections
 #import matplotlib.pyplot as plt
 
 def reshapeframe(raw, frameNum, taglist):
+    """Reshapes data into pandas dataframe with two indexes: ID and frame. For one frame."""
     frameData = raw[raw["frame"] == frameNum]
     iterables = [taglist, [frameNum]]
     nested = pd.MultiIndex.from_product(iterables, names=["ID", "frame"])
@@ -30,14 +31,16 @@ def reshapeframe(raw, frameNum, taglist):
     return frameSeries
 
 def reshape(raw, taglist):
+    """Combines results from reshapeframe()."""
     reshaped = [reshapeframe(raw, f, taglist) for f in list(pd.unique(raw['frame']))]
     reshaped = pd.concat(reshaped, ignore_index=False)
     return reshaped
 
-def IDdistance(found, ID, thres = 50):
+def IDdistance(found, ID, thres = 100, thres2 = 300):
+    """Separates into 'real' and 'fake' data based on change in speed and distance."""
     subset = found.loc[ID]
-    if subset.shape[0] < math.floor(max([f[1] for f in found.index])/10):
-        return None
+    #if subset.shape[0] < math.floor(max([f[1] for f in found.index])/10):
+    #    return None
     frames = list(subset.index)
     distance = [math.sqrt((subset.loc[frames[f], 'X'] - subset.loc[frames[f-1], 'X'])**2 + (subset.loc[frames[f], 'Y'] - subset.loc[frames[f-1], 'Y'])**2) for f in range(len(frames))]
     distance[0] = 0
@@ -46,8 +49,8 @@ def IDdistance(found, ID, thres = 50):
     speed = [distance[f]/time[f] for f in range(len(frames))]
     base = 0
     cat = []
-    for i in speed:
-        if i > thres:
+    for i in range(len(speed)):
+        if speed[i] > thres or distance[i] > thres2: # too fast or too far
             base = base + 1
         cat.append(base)
     
@@ -57,8 +60,9 @@ def IDdistance(found, ID, thres = 50):
     noZero.pop(0)
     for c in noZero:
         start = subset.iloc[cat.index(c)]
-        test = [math.sqrt((start[0] - end[i][0])**2 + (start[1] - end[i][1])**2)/(c-i) for i in range(c)]
-        if min(test) < thres:
+        test = [math.sqrt((start[0] - end[i][0])**2 + (start[1] - end[i][1])**2)/(c-i) for i in range(c)] #speed
+        test2 = [(start[0] - end[i][0])**2 + (start[1] - end[i][1])**2 for i in range(c)] #speed
+        if min(test) < thres and test2[test.index(min(test))] < thres2: #speed similar enough
             categories[c] = categories[test.index(min(test))]
             cat = [categories[c] if i == c else i for i in cat]
 
@@ -70,7 +74,7 @@ def IDdistance(found, ID, thres = 50):
             
     return [frames, cat]
 
-def wrangle(outname, thres = 50):
+def wrangle(outname, thres = 50, thres2 = 200):
     print('Reading file...')
     raw = pd.read_csv(outname + '_raw.csv')
     if outname[0] == 'A':
@@ -112,13 +116,17 @@ def wrangle(outname, thres = 50):
         previous = good.loc[(slice(None), [i for i in range(int(row.name[1]))]), slice(None)]
         current = good.loc[(slice(None), int(row.name[1])), slice(None)]
         ids = list(set([i[0] for i in previous.index])-set([i[0] for i in current.index]))
+        wrangled.iat[int(row[2]), 1] = None
+
         if len(ids) == 0:
             wrangled.iat[int(row[2]), 1] = None
         else:
             testpts = [previous.loc[id].iloc[-1] if len(previous.loc[id].shape) > 1 else previous.loc[id] for id in ids]
             test = [math.sqrt((row[0] - testpts[i][0])**2 + (row[1] - testpts[i][1])**2)/(row.name[1]-testpts[i].name) for i in range(len(testpts))]
             if min(test) < thres:
-                wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
+                test2 = ((row[0] - testpts[test.index(min(test))][0])**2 + (row[1] - testpts[test.index(min(test))][1])**2)
+                if test2 < thres2:
+                    wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
             else:
                 wrangled.iat[int(row[2]), 1] = None
     

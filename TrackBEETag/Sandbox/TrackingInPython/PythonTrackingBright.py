@@ -103,7 +103,7 @@ def findtags(img, outname):
     #cv2.imwrite(outname + "_close.png", close)
     
     # find blobs
-    contours, hierarchy = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     contours = [blob for blob in contours if cv2.contourArea(blob) > 0]
     #drawcontours = cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
     #cv2.imwrite(outname + "_BWcontour.png", drawcontours)
@@ -158,10 +158,10 @@ def findtags(img, outname):
     potentialTags = []
     for pts in rect2:
         roi = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
-        if np.min(roi) < 113 and min(pts[2],pts[3]) > 25 and np.max(roi) > 113:
-                    fillrect = cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),-1)
-                    fillrect = bkgd
-                    potentialTags.append(pts)
+        #if np.min(roi) < 113 and min(pts[2],pts[3]) > 25 and np.max(roi) > 113:
+        fillrect = cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),-1)
+        fillrect = bkgd
+        potentialTags.append(pts)
     #cv2.imwrite(outname + "_BWfillrect.png", fillrect)
 
     # crop out each rectangle from red channel
@@ -523,6 +523,8 @@ def main(argv):
         taglist = [59,75,104,135,211,237,324,341,361,377,413,436,456,510,579,609,637,664,681,720,802,844,910,1074,1104,1403,1620,1718,1799,1903,2006,2072,2192,2242,2355,2856,2880,3163,3358,3388]
     elif filename[0] == 'P':
         taglist = [59,68,74,75,103,104,135,137,180,211,274,304,311,312,324,325,330,331,392,393,413,502,544,613,637,651,696,707,792,1104,1112,1465,1543,1759,1846,1903,2056,2856,2945,3163]
+    elif outname[0] == 't':
+        taglist = [74,121,137,151,162,180,181,186,220,222,237,311,312,341,393,402,421,427,456,467,502,534,574,596,626,645,664,681,696,697,720,765,781,794,824,862,985,1074,1077,1419,1486,1797,1846,1875,1947,1966,2192,2211,2908,2915]
     models = [drawmodel(id) for id in taglist]
     wrangled = pd.DataFrame()
     f = 0
@@ -537,7 +539,7 @@ def main(argv):
         potentialTags = findtags(img, out) #potentialTags
         As = list()
         for a in range(len(potentialTags)):
-            raw = drawtag(potentialTags[a], img[:,:,2], out, a) # [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
+            raw = drawtag(potentialTags[a], img[:,:,1], out, a) # [[TAG1, TAG2], vertexes, centroidX, centroidY, OneCM]
             if raw == None:
                 continue
             frontchoice = [np.array([round((raw[1][i][0][0]+raw[1][(i+1)%4][0][0])/2), round((raw[1][i][0][1]+raw[1][(i+1)%4][0][1])/2)])  for i in range(4)]
@@ -583,7 +585,7 @@ def main(argv):
         f = f+1
 
     output = wrangled.rename(columns={0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm', 6:'test'})
-    output.to_csv(path_or_buf = outname + "_raw.csv", na_rep = "NA", index = False)
+    output.to_csv(path_or_buf = outname + ".csv", na_rep = "NA", index = False)
     return 0
 
 if __name__ == "__main__": 
