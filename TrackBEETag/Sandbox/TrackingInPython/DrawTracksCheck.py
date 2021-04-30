@@ -20,12 +20,13 @@ def getCoor(outname, id, thres):
     """ Reads csvfile and fills in missing data within a certain time range for specified ID. """
     csvfile = outname + ".csv"
     all = pd.read_csv(csvfile)
-    subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]] # read in frame, centroid coordinates
+    subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]]
+    subset
     missing = pd.DataFrame()
     subset = subset.append(missing, ignore_index=True)
 
-    for i in range(subset.shape[0]-1): #for each row except the last
-        if 1 < subset["frame"][i+1] - subset["frame"][i] < thres and math.sqrt((subset["centroidX"][i+1] - subset["centroidX"][i])**2 + (subset["centroidY"][i+1] - subset["centroidY"][i])**2) < 10000: #threshold by time and distance
+    for i in range(subset.shape[0]-1):
+        if 1 < subset["frame"][i+1] - subset["frame"][i] < thres and math.sqrt((subset["centroidX"][i+1] - subset["centroidX"][i])**2 + (subset["centroidY"][i+1] - subset["centroidY"][i])**2) < 20000: #threshold by time and distance
             addframe = pd.DataFrame(list(range(int(subset["frame"][i] + 1), int(subset["frame"][i+1]))))
             addX = pd.DataFrame([subset["centroidX"][i] + (subset["centroidX"][i+1]-subset["centroidX"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
             addY = pd.DataFrame([subset["centroidY"][i] + (subset["centroidY"][i+1]-subset["centroidY"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
@@ -64,7 +65,8 @@ def getallCoor(outname, thres):
 def chooseColour(i):
     """ Choose unique colour for each ID. """
     fullList = mcolors.CSS4_COLORS
-    names = ['lightcoral', 'silver', 'royalblue', 'pink', 'plum', 'orangered', 'navy', 'lightgreen', 'purple', 'mediumvioletred', 'tomato', 'maroon','slateblue', 'red', 'saddlebrown', 'sandybrown', 'peru', 'palegreen', 'burlywood', 'goldenrod', 'lime', 'darkkhaki', 'orange', 'yellow', 'yellowgreen', 'olivedrab', 'green', 'darkgreen', 'darkseagreen', 'turquoise', 'teal', 'aqua', 'steelblue', 'dodgerblue', 'blue', 'deepskyblue', 'blueviolet', 'magenta', 'deeppink', 'crimson']
+    #names = ['lightcoral', 'silver', 'royalblue', 'pink', 'plum', 'orangered', 'navy', 'lightgreen', 'purple', 'mediumvioletred', 'tomato', 'maroon','slateblue', 'red', 'saddlebrown', 'sandybrown', 'peru', 'palegreen', 'burlywood', 'goldenrod', 'lime', 'darkkhaki', 'orange', 'yellow', 'yellowgreen', 'olivedrab', 'green', 'darkgreen', 'darkseagreen', 'turquoise', 'teal', 'aqua', 'steelblue', 'dodgerblue', 'blue', 'deepskyblue', 'blueviolet', 'magenta', 'deeppink', 'crimson']
+    names = list(fullList.keys())
     colour = [c for c in fullList[names[i]]]
     r = int(colour[1] + colour[2], 16)
     g = int(colour[3] + colour[4], 16)
@@ -107,7 +109,7 @@ def main(argv):
             files = [f for f in os.listdir('.') if f[-4:-1] == '.MP']
             for filename in files:
                 outname = os.path.splitext(os.path.basename(filename))[0]
-                allCoors = getallCoor(outname, thres = 10)
+                allCoors = getallCoor(outname, thres = 1000)
                 
                 cap = cv2.VideoCapture(filename)
                 # Define the codec and create VideoWriter object
@@ -141,7 +143,7 @@ def main(argv):
         filename = files[int(iter)-1]
     
     outname = os.path.splitext(os.path.basename(filename))[0]
-    allCoors = getallCoor(outname, thres = 150)
+    allCoors = getallCoor(outname, thres = 1000)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object

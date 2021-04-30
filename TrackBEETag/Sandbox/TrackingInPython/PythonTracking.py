@@ -498,6 +498,22 @@ def scoretag(TAG, models):
 
     return [difference, direction]
 
+def scoretag(TAG, models):
+    #ID tag
+    configs = [TAG, np.rot90(TAG, k=1, axes = (0, 1)), np.rot90(TAG, k=2, axes = (0, 1)), np.rot90(TAG, k=3)]
+    difference = []
+    direction = []
+    
+    for m in models:
+        diff = [np.sum(abs(m - config))/255 for config in configs]
+        difference.append(min(diff))
+        direction.append(diff.index(min(diff)))
+    
+    if min(difference) < 2:
+        return [min(difference), direction[difference.index(min(difference))]]
+    else:
+        return None
+
 def main(argv):
     """ Main entry point of the program """
     if len(sys.argv) == 2:
