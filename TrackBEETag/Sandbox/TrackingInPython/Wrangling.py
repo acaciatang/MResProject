@@ -87,18 +87,22 @@ def wrangle(outname, thres = 50, thres2 = 100):
         taglist = [59,68,74,75,103,104,135,137,180,211,274,304,311,312,324,325,330,331,392,393,413,502,544,613,637,651,696,707,792,1104,1112,1465,1543,1759,1846,1903,2056,2856,2945,3163]
     wrangled = copy.deepcopy(raw)
     print('Done!')
-    print()
+    print('Reshaping file...')
     reshaped = reshape(raw, taglist)
+    print('Done!')
+    print('Wrangling...')
     holder = copy.deepcopy(reshaped)
     found = reshaped.dropna(axis = 0)
     foundtags = set([i[0] for i in found.index])
     for id in foundtags:
         if IDdistance(found, id) != None:
+            print('ID: ' + str(id))
             frames = IDdistance(found, id)[0]
             cat = IDdistance(found, id)[1]
             for f in range(len(frames)):
                 holder.loc[(id,frames[f]),'cat'] = cat[f]
-    
+                print('frame: ' + str(f))
+
     #havespeed = holder.dropna(axis = 0) # plotting for 
     noNA = holder.dropna(axis = 0)
     good = noNA[noNA.loc[:, 'cat']]
