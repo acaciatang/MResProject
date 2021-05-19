@@ -37,20 +37,18 @@ def main(argv):
         ret, frame = cap.read()
         if ret == False:
                 break
-        #G = frame[:, :, 1]
-        #G = cv2.cvtColor(G,cv2.COLOR_GRAY2RGB)
+        cv2.imwrite('overexpsoed.png',frame)
+        break
+        G = frame[:, :, 1]
+        G = cv2.cvtColor(G,cv2.COLOR_GRAY2RGB)
 
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-        cl1 = clahe.apply(frame[:, :, 2])
-        
         # write the flipped frame
-        #out.write(G)
-        out.write(cl1)
+        out.write(G)
         print("Wrote frame " + str(i))
         #cv2.imshow('frame',frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        i+=1 
+        i+=1
 
     # Release everything if job is finished
     cap.release()
