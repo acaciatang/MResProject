@@ -26,7 +26,33 @@ elif filename[-12] == 'C':
     taglist = [862,121,137,151,180,181,186,220,222,237,341,393,402,421,456,467,534,574,596,626,645,664,681,696,697,765,781,794,985,1077,1419,1846,1947,1966,2908,2915]
 elif filename[-12] == 'D':
     taglist = [534,74,121,137,151,186,220,222,237,311,312,341,393,402,421,427,456,467,574,596,626,645,664,681,696,697,781,794,862,985,1077,1419,1846,1947,1966,2908]
-models = [drawmodel(id) for id in taglist]
+
+
+def caldis(pt, corner):
+    dis = math.sqrt((pt[0][0]-corner[0])**2 + (pt[0][1]-corner[1])**2)
+    return dis
+
+#change to distance to corners
+def extremepoints(contour):
+    Xs = contour[:, 0][:,0]
+    Ys = contour[:, 0][:,1]
+
+    minX = min(Xs)
+    maxX = max(Xs)
+    minY = min(Ys)
+    maxY = max(Ys)
+
+    dis1 = [caldis(pt, [minX, minY]) for pt in contour]
+    dis2 = [caldis(pt, [maxX, minY]) for pt in contour]
+    dis3 = [caldis(pt, [maxX, maxY]) for pt in contour]
+    dis4 = [caldis(pt, [minX, maxY]) for pt in contour]
+    
+    p1 = contour[dis1.index(min(dis1))][0]
+    p2 = contour[dis2.index(min(dis2))][0]
+    p3 = contour[dis3.index(min(dis3))][0]
+    p4 = contour[dis4.index(min(dis4))][0]
+
+    return [p1, p2, p3, p4]
 
 def scoretag(TAG, models, taglist):
     #ID tag
@@ -66,6 +92,7 @@ def drawmodel(id):
         taglist = [534,74,121,137,151,186,220,222,237,311,312,341,393,402,421,427,456,467,574,596,626,645,664,681,696,697,781,794,862,985,1077,1419,1846,1947,1966,2908]
     models = [drawmodel(id) for id in taglist]
 
+models = [drawmodel(id) for id in taglist]
 for i in range(3):
     equalised[:, :, i] = cv2.equalizeHist(equalised[:, :, i])
 
