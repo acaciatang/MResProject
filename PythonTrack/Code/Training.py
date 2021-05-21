@@ -25,8 +25,6 @@ def main(argv):
                 PythonTracking.findtags(img, outname)
                 print('Finished ' + file)
 
-
-
 if __name__ == "__main__": 
     """Makes sure the "main" function is called from command line"""  
     status = main(sys.argv)

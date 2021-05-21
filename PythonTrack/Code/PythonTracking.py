@@ -97,69 +97,61 @@ def findthres(G):
     return bws[average.index(max(average))-10]
 
 def findtags(img, outname):
-    #load image and get name of output file
-    #img = cv2.imread(image, 1)
-    #outname = os.path.splitext(os.path.basename(image))[0]
-
-    # separate out colour channels of interest: green (G) for detecting tags, red (R) for recognizing tags
-    G = img[:, :, 1]
-    #cv2.imwrite(outname + "_G.png", G)
-    R = img[:, :, 2]
-    #cv2.imwrite(outname + "_R.png", R)
+    #separate out red channel
+    R = img[:, :, 2] = cv2.equalizeHist(img[:, :, 2])
+    #cv2.imwrite(outname + "_eq.png", R)
     bkgd = cv2.cvtColor(R,cv2.COLOR_GRAY2RGB)
 
-    bw = findthres(G)
-    #cv2.imwrite(outname + "_BW.png", bw)
+    bw = cv2.adaptiveThreshold(R,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,11,2)
+    #cv2.imwrite(outname + "_bw.png", bw)
 
-    #make blobs more blobby
-    kernel = np.ones((5,5),np.uint8)
-    close = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
-    #cv2.imwrite(outname + "_close.png", close)
-    
+    blur = cv2.medianBlur(bw,9)
+    kernel = np.ones((3,3),np.uint8)
+    opening = cv2.morphologyEx(blur, cv2.MORPH_OPEN, kernel)
+    #cv2.imwrite(outname + "_opening.png", opening)
+
     # find blobs
-    contours, hierarchy = cv2.findContours(close,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-    contours = [blob for blob in contours if cv2.contourArea(blob) > 0]
-    drawcontours = cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
+    contours, hierarchy = cv2.findContours(opening,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours = [blob for blob in contours if 2000 > cv2.contourArea(blob) > 500 and cv2.arcLength(blob, True) < 200]
+    #drawcontours = cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
     #cv2.imwrite(outname + "_BWcontour.png", drawcontours)
 
-    #remove things that stick out
-    #epsilon = [0.01*cv2.arcLength(blob,True) for blob in contours]
-    #approx = [cv2.approxPolyDP(contours[i],epsilon[i],True) for i in range(len(contours))]
-    #drawredraw = cv2.drawContours(bkgd, approx, -1, (0,0,255), 1) 
-    #cv2.imwrite(outname + "_BWredraw.png", drawredraw)
+    #get white blobs
+    lefts = [tuple(c[c[:,:,0].argmin()][0]) for c in contours]
+    leftcolours = [opening[l[1], l[0]+1] for l in lefts]
+    tops = [tuple(c[c[:,:,1].argmin()][0]) for c in contours]
+    topcolours = [opening[t[1]+1, t[0]] for t in tops]
+    white = [contours[i] for i in range(len(contours)) if (leftcolours[i] == 255 and topcolours[i] == 255)]
 
     #redraw contours to make convex
-    redraw = [cv2.convexHull(blob) for blob in contours]
-    drawredraw = cv2.drawContours(bkgd, redraw, -1, (0,255,0), 1) 
+    redraw = [cv2.convexHull(blob) for blob in white]
+    #drawredraw = cv2.drawContours(bkgd, redraw, -1, (0,255,0), 1) 
     #cv2.imwrite(outname + "_BWredraw.png", drawredraw)
 
     # filter for blobs of right size based on extreme points
-    rightsize = []
-    for blob in redraw:
-        points = extremepoints(blob)
-        distances1 = [math.sqrt((points[p-1][0]-points[p][0])**2 + (points[p-1][1]-points[p][1])**2) for p in range(len(points))]
-        distances2 = [math.sqrt((blob[p-1][0][0]-blob[p][0][0])**2 + (blob[p-1][0][1]-blob[p][0][1])**2) for p in range(len(blob))]
-        distances = distances1 + distances2
-        maxdist = max(distances)
-        if 25 < maxdist < 200:
-            rightsize.append(blob)
-    drawrightsize = cv2.drawContours(bkgd, rightsize, -1, (255,0,0), 1) # contours of right size plotted in blue
+    #rightsize = []
+    #for blob in redraw:
+    #    points = extremepoints(blob)
+    #    distances1 = [math.sqrt((points[p-1][0]-points[p][0])**2 + (points[p-1][1]-points[p][1])**2) for p in range(len(points))]
+    #    distances2 = [math.sqrt((blob[p-1][0][0]-blob[p][0][0])**2 + (blob[p-1][0][1]-blob[p][0][1])**2) for p in range(len(blob))]
+    #    distances = distances1 + distances2
+    #    maxdist = max(distances)
+    #    if 25 < maxdist < 100:
+    #        rightsize.append(blob)
+    #drawrightsize = cv2.drawContours(img, rightsize, -1, (0,255,0), 1) # contours of right size plotted in blue
     #cv2.imwrite(outname + "_BWrightsize.png", drawrightsize)
 
     #draw rectangles around the points (tilt)    
-    rect = [cv2.minAreaRect(blob) for blob in rightsize]
+    rect = [cv2.minAreaRect(blob) for blob in redraw]
     box = [cv2.boxPoints(pts) for pts in rect]
-    
+
     # draw rectangles around the rectangle (no tilt)
     rect2 = [cv2.boundingRect(blob) for blob in box if min(cv2.boundingRect(blob))> 0]
     fillrect = bkgd
-    potentialTags = []
-    for pts in rect2:
-        roi = R[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
-        if np.min(roi) < 113 and min(pts[2],pts[3]) > 25 and np.max(roi) > 113:
-                    fillrect = cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),-1)
-                    fillrect = bkgd
-                    potentialTags.append(pts)
+    potentialTags = [pts for pts in rect2]
+    for pts in potentialTags:
+            fillrect = cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
+            fillrect = bkgd
     cv2.imwrite(outname + "_BWfillrect.png", fillrect)
 
     # crop out each rectangle from red channel
