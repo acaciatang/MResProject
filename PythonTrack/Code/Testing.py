@@ -25,11 +25,12 @@ def main(argv):
         for file in files:
             print(file)
             if file != '.DS_Store':
-                subprocess.Popen(["mkdir", '../Results/Test/' + os.path.splitext(file)[0]]) #do this first
-                #print('Tracking ' + file)
-                #img = cv2.imread(dir + '/' + file)
-                #outname = '../Results/Test/' + os.path.splitext(file)[0]
+                #subprocess.Popen(["mkdir", '../Results/Test/' + os.path.splitext(file)[0]]) #do this first
+                print('Tracking ' + file)
+                filename = dir + '/' + file
+                outname = '../Results/Test/' + os.path.splitext(file)[0] + '/'
                 #np.append([[1, 2, 3], [4, 5, 6]], [[7, 8, 9]])
+                PythonTracking.findtags(filename, outname)
                 print('Finished ' + file)
 
 if __name__ == "__main__": 

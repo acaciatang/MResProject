@@ -37,7 +37,7 @@ def main(argv):
         ret, frame = cap.read()
         if ret == False:
                 break
-        cv2.imwrite('overexpsoed.png',frame)
+        cv2.imwrite('tags.png',frame)
         break
         G = frame[:, :, 1]
         G = cv2.cvtColor(G,cv2.COLOR_GRAY2RGB)
