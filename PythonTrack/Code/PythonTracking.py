@@ -312,7 +312,7 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
                     TAG2[i,j] = 255
         
         #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
-        results = scoretag(TAG2, models, taglist) # score, dir, id
+        results = scoretag(TAG2, taglist) # score, dir, id
         if results[0] < 2:
             centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
             centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
@@ -348,9 +348,12 @@ def main(argv):
         taglist = [862,121,137,151,180,181,186,220,222,237,341,393,402,421,456,467,534,574,596,626,645,664,681,696,697,765,781,794,985,1077,1419,1846,1947,1966,2908,2915]
     elif base[6] == 'D':
         taglist = [534,74,121,137,151,186,220,222,237,311,312,341,393,402,421,427,456,467,574,596,626,645,664,681,696,697,781,794,862,985,1077,1419,1846,1947,1966,2908]
-    models = [drawmodel(id) for id in taglist]
     wrangled = pd.DataFrame()
     f = 0
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter('../Results/' + outname + "_raw.mp4", fourcc, 20.0, (3840,2160))
+
     for frame in container.decode(video=0):
         img = frame.to_ndarray(format='bgr24')
         #break
@@ -361,8 +364,8 @@ def main(argv):
         Coordinates, Cropped, bkgd = findtags(img, outname+str(f))
         a = 0
         while a < len(Coordinates):
-            if drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, models, taglist) != None:
-                bkgd, row = drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, models, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
+            if drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) != None:
+                bkgd, row = drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
                 if row[0] != 'not tag':
                     completerow = [f] + row
                     frameData = frameData.append([tuple(completerow)], ignore_index=True)
@@ -371,10 +374,12 @@ def main(argv):
             else:
                 a = a+1
         wrangled = wrangled.append(frameData, ignore_index=True)
+        out.write(bkgd)
         #cv2.imwrite(outname + '_' + str(f) + "_foundtags.png", bkgd)
         print("Finished frame " + str(f))
         f = f+1
-
+    out.release()
+    cv2.destroyAllWindows()
     output = wrangled.rename(columns={0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm', 6:'score'})
     output.to_csv(path_or_buf = outname + "_raw.csv", na_rep = "NA", index = False)
     return 0
