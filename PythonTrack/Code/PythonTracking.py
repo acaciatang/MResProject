@@ -169,9 +169,7 @@ def findtags(img, outname):
             continue
         
         Coordinates.append(pts)
-        CroppedTags.append(cropped)
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
-        
+        CroppedTags.append(cropped)        
     #cv2.imwrite(outname + "_BWfillrect.png", fillrect)
 
     # crop out each rectangle from red channel
@@ -261,7 +259,7 @@ def drawtag(pts, cropped, bkgd, outname, a, models, taglist):
             TAG1[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
             if TAG1[i, j] < 127:
                 TAG1[i,j] = 0
-            if i == 0 or i == 5 or j == 0 or j == 5 or TAG1[i, j] > 128:
+            if TAG1[i, j] > 128: #this is on purpose middle values are tricky
                 TAG1[i,j] = 255
     
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
@@ -272,7 +270,7 @@ def drawtag(pts, cropped, bkgd, outname, a, models, taglist):
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
         cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
         cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
-        return [bkgd, [results[2], centroidX, centroidY, results[1], 'OneCM', results[0]]]
+        return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
 
     #second try
     vertexes = closesttosides(approx)  
@@ -283,6 +281,7 @@ def drawtag(pts, cropped, bkgd, outname, a, models, taglist):
         vertexes = extremepoints(approx)
         centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
         centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
         return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
     else:
         OneCM = edge/0.3
@@ -301,26 +300,27 @@ def drawtag(pts, cropped, bkgd, outname, a, models, taglist):
         bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
         #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
         
-        TAG1 = np.full((6, 6), 255)
+        TAG2 = np.full((6, 6), 255)
         for i in range(6):
             for j in range(6):
-                TAG1[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
-                if TAG1[i, j] < 127:
-                    TAG1[i,j] = 0
-                if i == 0 or i == 5 or j == 0 or j == 5 or TAG1[i, j] > 128:
-                    TAG1[i,j] = 255
+                TAG2[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
+                if TAG2[i, j] < 127:
+                    TAG2[i,j] = 0
+                if TAG1[i, j] > 128: #this is on purpose middle values are tricky
+                    TAG2[i,j] = 255
         
         #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
-        results = scoretag(TAG1, models, taglist) # score, dir, id
+        results = scoretag(TAG2, models, taglist) # score, dir, id
         if results[0] < 2:
             centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
             centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
             cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
             cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
             cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
-            return [bkgd, [results[2], centroidX, centroidY, results[1], 'OneCM', results[0]]]
+            return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
         centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
         centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
         return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
 def main(argv):
