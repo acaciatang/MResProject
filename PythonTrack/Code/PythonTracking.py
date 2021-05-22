@@ -180,11 +180,12 @@ def findtags(img, outname):
 
     return [Coordinates, CroppedTags, bkgd]
 
-def scoretag(TAG, models, taglist):
+def scoretag(TAG, taglist):
     #ID tag
     configs = [TAG, np.rot90(TAG, k=1, axes = (0, 1)), np.rot90(TAG, k=2, axes = (0, 1)), np.rot90(TAG, k=3)]
     difference = []
     direction = []
+    models = [drawmodel(id) for id in taglist]
     
     for m in models:
         diff = [np.sum(abs(m - config))/255 for config in configs]
@@ -208,7 +209,7 @@ def drawmodel(id):
     model = np.rot90(model)*255 # I don't know why the matlab cod is like this but it is
     return model.astype(int)
 
-def drawtag(pts, cropped, bkgd, outname, a, models, taglist):
+def drawtag(pts, cropped, bkgd, outname, a, taglist):
     grey = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY)
     #convert to black and white with Otsu's thresholding
     ret2,bw = cv2.threshold(grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
@@ -263,13 +264,14 @@ def drawtag(pts, cropped, bkgd, outname, a, models, taglist):
                 TAG1[i,j] = 255
     
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
-    results = scoretag(TAG1, models, taglist) # score, dir, id
+    results = scoretag(TAG1, taglist) # score, dir, id
     if results[0] < 2:
         centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
         centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
         cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
         cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
+        taglist.remove(results[2])
         return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
 
     #second try
@@ -333,7 +335,7 @@ def main(argv):
         filename = files[int(iter)-1]
     print (filename)
 
-    filename = '../Data/R1D7R2A1.MP4'
+    #filename = '../Data/R1D7R2A1.MP4'
     base = os.path.splitext(os.path.basename(filename))[0]
     outname = '../Results/' + base
     container = av.open(filename)

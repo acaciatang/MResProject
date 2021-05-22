@@ -18,7 +18,7 @@ import math
 #code
 def getCoor(outname, id, thres):
     """ Reads csvfile and fills in missing data within a certain time range for specified ID. """
-    csvfile = outname + ".csv"
+    csvfile = '../Results/' + outname + ".csv"
     all = pd.read_csv(csvfile)
     subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]] # read in frame, centroid coordinates
     missing = pd.DataFrame()
@@ -50,7 +50,7 @@ def getCoor(outname, id, thres):
 
 def getallCoor(outname, thres):
     """Fills in coordinates for all IDs."""
-    csvfile = outname + ".csv"
+    csvfile = '../Results/' + outname + ".csv"
     all = pd.read_csv(csvfile)
     IDs = pd.DataFrame(all["ID"].value_counts())
     IDs.reset_index(level=0, inplace=True)
@@ -146,7 +146,7 @@ def main(argv):
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(outname + "_tracks.mp4", fourcc, 20.0, (3840,2160))
+    out = cv2.VideoWriter('../Results/' + outname + "_tracks.mp4", fourcc, 20.0, (3840,2160))
 
     i=0
     while(cap.isOpened()):

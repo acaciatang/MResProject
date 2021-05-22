@@ -74,17 +74,17 @@ def IDdistance(found, ID, thresf = 40, thres = 50, thres2 = 100):
 
 def wrangle(outname, thres = 50, thres2 = 100):
     print('Reading file...')
-    raw = pd.read_csv(outname + '_raw.csv')
-    if outname[0] == 'A':
-        taglist = [68,118,137,173,289,304,325,365,392,420,437,512,559,596,613,666,696,765,862,1112,1150,1203,1492,1730,1966,2091,2327,2452,2511,2932,2992,3067,3261,3360,3415,3486,3570,3757,3908,4015]
-    elif outname[0] == 'B':
-        taglist = [31,46,69,180,222,270,311,330,347,393,542,598,651,697,792,813,875,1062,1085,1227,1368,1498,1585,1744,1947,1986,2056,2158,2281,2332,2460,2607,2835,2908,2945,3375,3488,3581,3783,3926]
-    elif outname[0] == 'C':
-        taglist = [52,74,103,209,226,274,312,331,354,427,455,476,502,544,574,601,634,661,707,770,881,1028,1180,1243,1465,1543,1704,1759,1797,1846,1896,2118,2340,2413,2488,2523,2915,2954,3134,3832]
-    elif outname[0] == 'D':
-        taglist = [59,75,104,135,211,237,324,341,361,377,413,436,456,510,579,609,637,664,681,720,802,844,910,1074,1104,1403,1620,1718,1799,1903,2006,2072,2192,2242,2355,2856,2880,3163,3358,3388]
-    elif outname[0] == 'P':
-        taglist = [59,68,74,75,103,104,135,137,180,211,274,304,311,312,324,325,330,331,392,393,413,502,544,613,637,651,696,707,792,1104,1112,1465,1543,1759,1846,1903,2056,2856,2945,3163]
+    raw = pd.read_csv('../Results/' + outname + '_raw.csv')
+    
+    if outname[6] == 'A':
+        taglist = [237,74,121,137,151,180,181,220,222,311,312,341,402,421,427,456,467,596,626,645,664,681,696,697,765,781,794,862,985,1077,1419,1846,1947,1966,2908,2915]
+    elif outname[6] == 'B':
+        taglist = [180,74,121,137,151,181,186,220,222,237,311,312,341,393,421,427,467,534,574,596,626,645,664,681,696,697,765,781,862,985,1077,1419,1846,1947,1966,2908,2915]
+    elif outname[6] == 'C':
+        taglist = [862,121,137,151,180,181,186,220,222,237,341,393,402,421,456,467,534,574,596,626,645,664,681,696,697,765,781,794,985,1077,1419,1846,1947,1966,2908,2915]
+    elif outname[6] == 'D':
+        taglist = [534,74,121,137,151,186,220,222,237,311,312,341,393,402,421,427,456,467,574,596,626,645,664,681,696,697,781,794,862,985,1077,1419,1846,1947,1966,2908]
+    
     wrangled = copy.deepcopy(raw)
     print('Done!')
     print('Reshaping file...')
@@ -97,8 +97,11 @@ def wrangle(outname, thres = 50, thres2 = 100):
     for id in foundtags:
         if IDdistance(found, id) != None:
             print('ID: ' + str(id))
-            frames = IDdistance(found, id)[0]
-            cat = IDdistance(found, id)[1]
+            frames, cat = IDdistance(found, id)
+            if id == 'X':
+                cat = [False]*len(cat)
+            else:
+                cat = [True]*len(cat)
             for f in range(len(frames)):
                 holder.loc[(id,frames[f]),'cat'] = cat[f]
                 print('frame: ' + str(f))
@@ -108,7 +111,7 @@ def wrangle(outname, thres = 50, thres2 = 100):
     good = noNA[noNA.loc[:, 'cat']]
     sus = noNA[noNA.loc[:, 'cat'] == False]
     
-    for r in range(sus.shape[0]):
+    for r in range(sus.shape[0]): #for each potentially mislabelled entry
         row = sus.iloc[r]
         previous = good.loc[(slice(None), [i for i in range(int(row.name[1]))]), slice(None)]
         goodframes = list(set([i[0] for i in good.index]))
@@ -130,7 +133,7 @@ def wrangle(outname, thres = 50, thres2 = 100):
                 wrangled.iat[int(row[2]), 1] = None
     
     wrangled = wrangled.dropna(axis = 0)
-    wrangled.to_csv(path_or_buf = outname + ".csv", na_rep = "NA", index = True)
+    wrangled.to_csv(path_or_buf = '../Results/' + outname + ".csv", na_rep = "NA", index = True)
     #raw.to_csv(path_or_buf = outname + "raw.csv", na_rep = "NA", index = True)
     print("Done!")
     return 0
@@ -148,6 +151,7 @@ def main(argv):
         iter = os.getenv('PBS_ARRAY_INDEX')
         files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
         filename = files[int(iter)-1]
+    filename = '../Data/R1D7R2A1_trimmed.MP4'
     outname = os.path.splitext(os.path.basename(filename))[0]
     return wrangle(outname)
 
