@@ -18,6 +18,15 @@ import statistics
 import pandas as pd
 import copy
 
+def makepng(filename, outname):
+    container = av.open(filename)
+
+    for frame in container.decode(video=0):
+        print("Printed frame " + str('%06d' % frame.index) + "!")
+        frame.to_image().save(outname + '_%06d.png' % frame.index)
+        i = frame.index
+    return i
+
 def caldis(pt, corner):
     dis = math.sqrt((pt[0][0]-corner[0])**2 + (pt[0][1]-corner[1])**2)
     return dis
