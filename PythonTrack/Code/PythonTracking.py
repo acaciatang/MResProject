@@ -130,19 +130,6 @@ def findtags(img, outname):
     #drawredraw = cv2.drawContours(bkgd, redraw, -1, (0,255,0), 1) 
     #cv2.imwrite(outname + "_BWredraw.png", drawredraw)
 
-    # filter for blobs of right size based on extreme points
-    #rightsize = []
-    #for blob in redraw:
-    #    points = extremepoints(blob)
-    #    distances1 = [math.sqrt((points[p-1][0]-points[p][0])**2 + (points[p-1][1]-points[p][1])**2) for p in range(len(points))]
-    #    distances2 = [math.sqrt((blob[p-1][0][0]-blob[p][0][0])**2 + (blob[p-1][0][1]-blob[p][0][1])**2) for p in range(len(blob))]
-    #    distances = distances1 + distances2
-    #    maxdist = max(distances)
-    #    if 25 < maxdist < 100:
-    #        rightsize.append(blob)
-    #drawrightsize = cv2.drawContours(img, rightsize, -1, (0,255,0), 1) # contours of right size plotted in blue
-    #cv2.imwrite(outname + "_BWrightsize.png", drawrightsize)
-
     #draw rectangles around the points (tilt)    
     rect = [cv2.minAreaRect(blob) for blob in redraw]
     box = [cv2.boxPoints(pts) for pts in rect]
@@ -168,7 +155,7 @@ def findtags(img, outname):
         if len(np.where(bw == 0)[0])/len(np.where(bw == 255)[0]) > 5:
             continue
         
-        Coordinates.append(pts)
+        Coordinates.append((pts[0]-1, pts[1]-1, pts[2]+1, pts[3]+1))
         CroppedTags.append(cropped)        
     #cv2.imwrite(outname + "_BWfillrect.png", fillrect)
 
@@ -227,12 +214,13 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
     polygon = cv2.drawContours(cropped, [approx], -1, (0,255,0), 1, cv2.LINE_AA)
     #cv2.imwrite(outname + "_approx_" + str(a) + ".png", polygon)
 
-    #first try
+    print('first try')
     vertexes = extremepoints(approx)  
     edges = [math.sqrt((vertexes[p-1][0]-vertexes[p][0])**2 + (vertexes[p-1][1]-vertexes[p][1])**2) for p in range(len(vertexes))]
     edge = math.floor(min(edges))
 
     if edge == 0:
+        print('not tag')
         return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]
 
     OneCM = edge/0.3
@@ -244,6 +232,7 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
     tag = dst[0:edge, 0:edge]   
 
     if np.sum(np.isnan(tag)) !=0:
+        print('not tag')
         return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]        
 
     #draw tag
@@ -271,60 +260,63 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
         cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
         cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
-        taglist.remove(results[2])
+        print('Found it! ID: ' + str(results[2]))
         return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-    else:
-        #second try
-        vertexes = closesttosides(approx)  
-        edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
-        edge = math.floor(min(edges))
+    
+    print('second try')
+    vertexes = closesttosides(approx)  
+    edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
+    edge = math.floor(min(edges))
 
-        if edge == 0:
-            vertexes = extremepoints(approx)
-            centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
-            centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
-            cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
-            return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
-        else:
-            OneCM = edge/0.3
-            rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
-            pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
-            pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
-            M = cv2.getAffineTransform(pts1,pts2)
-            dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
-            tag = dst[0:edge, 0:edge]     
+    if edge == 0:
+        vertexes = extremepoints(approx)
+        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),1)
+        print('cannot read')
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
-            #draw tag
-            thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-            #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+    OneCM = edge/0.3
+    rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
+    pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
+    pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
+    M = cv2.getAffineTransform(pts1,pts2)
+    dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
+    tag = dst[0:edge, 0:edge]     
 
-            #enlarge
-            bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
-            #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
-            
-            TAG2 = np.full((6, 6), 255)
-            for i in range(6):
-                for j in range(6):
-                    TAG2[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
-                    if TAG2[i, j] < 127:
-                        TAG2[i,j] = 0
-                    if TAG1[i, j] > 128: #this is on purpose middle values are tricky
-                        TAG2[i,j] = 255
-            
-            #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
-            results = scoretag(TAG2, taglist) # score, dir, id
-            if results[0] < 2:
-                centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-                centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
-                cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
-                cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
-                cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
-                return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-            else:
-                centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-                centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
-                cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
-                return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
+    #draw tag
+    thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+
+    #enlarge
+    bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
+    #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
+    
+    TAG2 = np.full((6, 6), 255)
+    for i in range(6):
+        for j in range(6):
+            TAG2[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
+            if TAG2[i, j] < 127:
+                TAG2[i,j] = 0
+            if TAG1[i, j] > 128: #this is on purpose middle values are tricky
+                TAG2[i,j] = 255
+    
+    #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
+    results = scoretag(TAG2, taglist) # score, dir, id
+    if results[0] < 2:
+        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
+        cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
+        cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
+        print('Found it! ID: ' + str(results[2]))
+        return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
+
+    centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+    centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+    cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),1)
+    print('cannot read')
+    return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
 def main(argv):
     """ Main entry point of the program """
@@ -367,21 +359,21 @@ def main(argv):
         Coordinates, Cropped, bkgd = findtags(img, outname+str(f))
         a = 0
         while a < len(Coordinates):
-            if drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) != None:
-                bkgd, row = drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
-                if row[0] != 'not tag':
-                    if row[0] != 'X':
-                        completerow = [f] + row
-                        frameData = frameData.append([tuple(completerow)], ignore_index=True)
-                        cv2.imwrite(outname + '_' + str(f)  + '_' + str(a) + "_foundtags.png", bkgd)
-                        a = a+1
-                    else:
-                        completerow = [f] + row
-                        cannotRead = cannotRead.append([tuple(completerow)], ignore_index=True)
-                        cv2.imwrite(outname + '_' + str(f)  + '_' + str(a) + "_foundtags.png", bkgd)
-                        a = a+1
+            print(a)
+            bkgd, row = drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
+            if row[0] != 'not tag':
+                if row[0] != 'X':
+                    completerow = [f] + row
+                    frameData = frameData.append([tuple(completerow)], ignore_index=True)
+                    #cv2.imwrite(outname + '_' + str(f)  + '_' + str(a) + "_foundtags.png", bkgd)
+                    a = a+1
+                else:
+                    completerow = [f] + row
+                    cannotRead = cannotRead.append([tuple(completerow)], ignore_index=True)
+                    #cv2.imwrite(outname + '_' + str(f)  + '_' + str(a) + "_foundtags.png", bkgd)
+                    a = a+1
             else:
-                cv2.imwrite(outname + '_' + str(f)  + '_' + "a" + "_foundtags.png", bkgd)
+                #cv2.imwrite(outname + '_' + str(f)  + '_' + "a" + "_foundtags.png", bkgd)
                 a = a+1
         wrangled = wrangled.append(frameData, ignore_index=True)
         noID = noID.append(cannotRead, ignore_index=True)
