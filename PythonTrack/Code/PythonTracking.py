@@ -19,8 +19,8 @@ import pandas as pd
 import copy
 
 #test data
-img = cv2.imread('../Data/Training/R1D2R2C3_00000.png')
-outname = 'test'
+#img = cv2.imread('../Data/Training/R1D2R2C3_00000.png')
+#outname = 'test'
 
 def makepng(filename, outname):
     container = av.open(filename)
@@ -273,57 +273,58 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
         cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
         taglist.remove(results[2])
         return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-
-    #second try
-    vertexes = closesttosides(approx)  
-    edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
-    edge = math.floor(min(edges))
-
-    if edge == 0:
-        vertexes = extremepoints(approx)
-        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
     else:
-        OneCM = edge/0.3
-        rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
-        pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
-        pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
-        M = cv2.getAffineTransform(pts1,pts2)
-        dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
-        tag = dst[0:edge, 0:edge]     
+        #second try
+        vertexes = closesttosides(approx)  
+        edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
+        edge = math.floor(min(edges))
 
-        #draw tag
-        thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-        #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+        if edge == 0:
+            vertexes = extremepoints(approx)
+            centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+            centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
+            cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
+            return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
+        else:
+            OneCM = edge/0.3
+            rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
+            pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
+            pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
+            M = cv2.getAffineTransform(pts1,pts2)
+            dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
+            tag = dst[0:edge, 0:edge]     
 
-        #enlarge
-        bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
-        #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
-        
-        TAG2 = np.full((6, 6), 255)
-        for i in range(6):
-            for j in range(6):
-                TAG2[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
-                if TAG2[i, j] < 127:
-                    TAG2[i,j] = 0
-                if TAG1[i, j] > 128: #this is on purpose middle values are tricky
-                    TAG2[i,j] = 255
-        
-        #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
-        results = scoretag(TAG2, taglist) # score, dir, id
-        if results[0] < 2:
-            centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-            centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
-            cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
-            cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
-            cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
-            return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
+            #draw tag
+            thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+
+            #enlarge
+            bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
+            #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
+            
+            TAG2 = np.full((6, 6), 255)
+            for i in range(6):
+                for j in range(6):
+                    TAG2[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
+                    if TAG2[i, j] < 127:
+                        TAG2[i,j] = 0
+                    if TAG1[i, j] > 128: #this is on purpose middle values are tricky
+                        TAG2[i,j] = 255
+            
+            #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
+            results = scoretag(TAG2, taglist) # score, dir, id
+            if results[0] < 2:
+                centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+                centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+                cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
+                cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
+                cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
+                return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
+            else:
+                centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+                centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+                cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),3)
+                return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
 def main(argv):
     """ Main entry point of the program """
@@ -335,7 +336,7 @@ def main(argv):
         filename = files[int(iter)-1]
     print (filename)
 
-    #filename = '../Data/R1D7R2A1.MP4'
+    #filename = '../Data/R1D7R2A1_trimmed.MP4'
     base = os.path.splitext(os.path.basename(filename))[0]
     outname = '../Results/' + base
     container = av.open(filename)
@@ -349,6 +350,7 @@ def main(argv):
     elif base[6] == 'D':
         taglist = [534,74,121,137,151,186,220,222,237,311,312,341,393,402,421,427,456,467,574,596,626,645,664,681,696,697,781,794,862,985,1077,1419,1846,1947,1966,2908]
     wrangled = pd.DataFrame()
+    noID = pd.DataFrame()
     f = 0
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -359,6 +361,7 @@ def main(argv):
         #break
 
         frameData = pd.DataFrame()
+        cannotRead = pd.DataFrame()
         scores = pd.DataFrame()
         directions = pd.DataFrame()
         Coordinates, Cropped, bkgd = findtags(img, outname+str(f))
@@ -367,13 +370,21 @@ def main(argv):
             if drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) != None:
                 bkgd, row = drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
                 if row[0] != 'not tag':
-                    completerow = [f] + row
-                    frameData = frameData.append([tuple(completerow)], ignore_index=True)
-                    print(row)
-                    a = a+1
+                    if row[0] != 'X':
+                        completerow = [f] + row
+                        frameData = frameData.append([tuple(completerow)], ignore_index=True)
+                        cv2.imwrite(outname + '_' + str(f)  + '_' + str(a) + "_foundtags.png", bkgd)
+                        a = a+1
+                    else:
+                        completerow = [f] + row
+                        cannotRead = cannotRead.append([tuple(completerow)], ignore_index=True)
+                        cv2.imwrite(outname + '_' + str(f)  + '_' + str(a) + "_foundtags.png", bkgd)
+                        a = a+1
             else:
+                cv2.imwrite(outname + '_' + str(f)  + '_' + "a" + "_foundtags.png", bkgd)
                 a = a+1
         wrangled = wrangled.append(frameData, ignore_index=True)
+        noID = noID.append(cannotRead, ignore_index=True)
         out.write(bkgd)
         #cv2.imwrite(outname + '_' + str(f) + "_foundtags.png", bkgd)
         print("Finished frame " + str(f))
@@ -382,6 +393,8 @@ def main(argv):
     cv2.destroyAllWindows()
     output = wrangled.rename(columns={0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm', 6:'score'})
     output.to_csv(path_or_buf = outname + "_raw.csv", na_rep = "NA", index = False)
+    output2 = noID.rename(columns={0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm', 6:'score'})
+    output2.to_csv(path_or_buf = outname + "_noID.csv", na_rep = "NA", index = False)
     return 0
 
 if __name__ == "__main__": 
