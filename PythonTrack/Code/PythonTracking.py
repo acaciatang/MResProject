@@ -272,7 +272,7 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
         vertexes = extremepoints(approx)
         centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
         centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),1)
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),3)
         print('cannot read')
         return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
@@ -314,7 +314,7 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
 
     centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
     centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
-    cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),1)
+    cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),3)
     print('cannot read')
     return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
@@ -328,7 +328,7 @@ def main(argv):
         filename = files[int(iter)-1]
     print (filename)
 
-    #filename = '../Data/R1D7R2A1_trimmed.MP4'
+    filename = '../Data/R1D7R2A1_trimmed.MP4'
     base = os.path.splitext(os.path.basename(filename))[0]
     outname = '../Results/' + base
     container = av.open(filename)
@@ -350,7 +350,6 @@ def main(argv):
 
     for frame in container.decode(video=0):
         img = frame.to_ndarray(format='bgr24')
-        #break
 
         frameData = pd.DataFrame()
         cannotRead = pd.DataFrame()
@@ -375,8 +374,19 @@ def main(argv):
             else:
                 #cv2.imwrite(outname + '_' + str(f)  + '_' + "a" + "_foundtags.png", bkgd)
                 a = a+1
-        wrangled = wrangled.append(frameData, ignore_index=True)
-        noID = noID.append(cannotRead, ignore_index=True)
+        if len(frameData.index) > 0:
+            if len(set(frameData[1])) < len(frameData[1]):
+                doubled = frameData[frameData.duplicated(subset=[1])][1]
+                problem = frameData[frameData[1] == int(doubled)]
+                frameData = frameData.drop(problem.index)
+                keep = problem[problem[6] == min(problem[6])]
+                problem = problem.drop(keep.index)
+                problem[1] = ['X']*len(problem.index)
+                frameData.append(keep, ignore_index=True)
+                cannotRead.append(problem, ignore_index=True)
+
+            wrangled = wrangled.append(frameData, ignore_index=True)
+            noID = noID.append(cannotRead, ignore_index=True)
         out.write(bkgd)
         #cv2.imwrite(outname + '_' + str(f) + "_foundtags.png", bkgd)
         print("Finished frame " + str(f))

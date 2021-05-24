@@ -23,6 +23,7 @@ def reshapeframe(raw, frameNum, taglist):
     nested = pd.MultiIndex.from_product(iterables, names=["ID", "frame"])
     frameSeries = pd.DataFrame(index = nested, dtype = 'float64', columns = ['X', 'Y', 'OGindex'])
     for row in range(frameData.shape[0]):
+        print(row)
         frameSeries.loc[(frameData.iloc[row]['ID'], frameNum), "X"] = frameData.iloc[row]['centroidX']
         frameSeries.loc[(frameData.iloc[row]['ID'], frameNum), "Y"] = frameData.iloc[row]['centroidY']
         frameSeries.loc[(frameData.iloc[row]['ID'], frameNum), "OGindex"] = frameData.iloc[row].name
@@ -30,7 +31,7 @@ def reshapeframe(raw, frameNum, taglist):
     return frameSeries
 
 def reshape(raw, taglist):
-    reshaped = [reshapeframe(raw, f, taglist) for f in list(pd.unique(raw['frame']))]
+    reshaped = [reshapeframe(raw, float(f), taglist) for f in list(pd.unique(raw['frame']))]
     reshaped = pd.concat(reshaped, ignore_index=False)
     return reshaped
 
@@ -74,7 +75,7 @@ def IDdistance(found, ID, thresf = 40, thres = 50, thres2 = 100):
 
 def wrangle(outname, thres = 50, thres2 = 100):
     print('Reading file...')
-    raw = pd.read_csv('../Results/' + outname + '_raw.csv')
+    raw = pd.read_csv('../Results/' + outname + '.csv')
     
     if outname[6] == 'A':
         taglist = [237,74,121,137,151,180,181,220,222,311,312,341,402,421,427,456,467,596,626,645,664,681,696,697,765,781,794,862,985,1077,1419,1846,1947,1966,2908,2915]
@@ -133,7 +134,7 @@ def wrangle(outname, thres = 50, thres2 = 100):
                 wrangled.iat[int(row[2]), 1] = None
     
     wrangled = wrangled.dropna(axis = 0)
-    wrangled.to_csv(path_or_buf = '../Results/' + outname + ".csv", na_rep = "NA", index = True)
+    wrangled.to_csv(path_or_buf = '../Results/' + outname + "_final.csv", na_rep = "NA", index = True)
     #raw.to_csv(path_or_buf = outname + "raw.csv", na_rep = "NA", index = True)
     print("Done!")
     return 0

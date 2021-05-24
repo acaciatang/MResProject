@@ -14,7 +14,7 @@ set(f, 'Position', [0 0 4000 4000])
         im = createPrintable16BitCode(num, 40);
         
         imshow(im);
-        text(-25, 150, num2str(num), 'FontSize', 30, 'Rotation', 90);
+        text(-25, 150, num2str(num), 'FontSize', 30, 'Rotation', 270);
         text(380, 180, '->', 'FontSize', 30);
         print(strcat(num2str(num), 'keyed.jpg'), '-djpeg', '-r300');
 
