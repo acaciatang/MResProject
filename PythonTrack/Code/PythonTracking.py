@@ -96,27 +96,27 @@ def findthres(G):
 
     return bws[average.index(max(average))-10]
 
-def findtags(img, outname):
+def findtags(img):
     for i in range(3):
         img[:, :, i] = cv2.equalizeHist(img[:, :, i])
     #separate out red channel
     R = img[:, :, 2]
     #cv2.imwrite(outname + "_eq.png", R)
     bkgd = cv2.cvtColor(R,cv2.COLOR_GRAY2RGB)
-
-    bw = cv2.adaptiveThreshold(R,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,11,2)
+    
+    R[R > 85] = 255
+    R[R < 255] = 0
     #cv2.imwrite(outname + "_bw.png", bw)
-
-    blur = cv2.medianBlur(bw,9)
-    kernel = np.ones((3,3),np.uint8)
+    blur = cv2.medianBlur(R,3)
+    kernel = np.ones((4,4),np.uint8)
     opening = cv2.morphologyEx(blur, cv2.MORPH_OPEN, kernel)
     #cv2.imwrite(outname + "_opening.png", opening)
 
     # find blobs
     contours, hierarchy = cv2.findContours(opening,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    contours = [blob for blob in contours if 2000 > cv2.contourArea(blob) > 500 and cv2.arcLength(blob, True) < 200]
-    #drawcontours = cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
-    #cv2.imwrite(outname + "_BWcontour.png", drawcontours)
+    contours = [blob for blob in contours  if 2000 > cv2.contourArea(blob) > 500]
+    cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
+    #cv2.imwrite(outname + "_BWcontour.png", bkgd)
 
     #get white blobs
     lefts = [tuple(c[c[:,:,0].argmin()][0]) for c in contours]
@@ -127,8 +127,8 @@ def findtags(img, outname):
 
     #redraw contours to make convex
     redraw = [cv2.convexHull(blob) for blob in white]
-    #drawredraw = cv2.drawContours(bkgd, redraw, -1, (0,255,0), 1) 
-    #cv2.imwrite(outname + "_BWredraw.png", drawredraw)
+    cv2.drawContours(bkgd, redraw, -1, (0,255,0), 1) 
+    #cv2.imwrite(outname + "_BWredraw.png", bkgd)
 
     #draw rectangles around the points (tilt)    
     rect = [cv2.minAreaRect(blob) for blob in redraw]
@@ -136,34 +136,13 @@ def findtags(img, outname):
 
     # draw rectangles around the rectangle (no tilt)
     rect2 = [cv2.boundingRect(blob) for blob in box if min(cv2.boundingRect(blob))> 0]
-    fillrect = bkgd
     Coordinates = list()
     CroppedTags = list()
     for pts in rect2:
-        cropped = img[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]]
-        #weed out blobs that are too dark
-        blur = np.ones(cropped.shape)
-        for i in range(3):
-            blur[:, :, i] = cv2.medianBlur(cropped[:, :, i],9)
-        test = np.sum(blur, 2)
-        if len(np.where(test > 100)[0])/(test.shape[0]*test.shape[1]) == 1.0 or len(np.where(test > 100)[0])/(test.shape[0]*test.shape[1]) < 0.5:
-            continue
-        grey = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY)
-        
-        #convert to black and white with Otsu's thresholding
-        ret2,bw = cv2.threshold(grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-        if len(np.where(bw == 0)[0])/len(np.where(bw == 255)[0]) > 5:
-            continue
-        
-        Coordinates.append((pts[0]-1, pts[1]-1, pts[2]+1, pts[3]+1))
-        CroppedTags.append(cropped)        
-    #cv2.imwrite(outname + "_BWfillrect.png", fillrect)
-
-    # crop out each rectangle from red channel
-    #mask = cv2.inRange(fillrect, np.array([0,0,255]), np.array([0,0,255]))
-    #cropped = cv2.bitwise_and(img,img, mask= mask)
-    #output = cv2.add(cropped,cv2.cvtColor(R,cv2.COLOR_GRAY2RGB))
-    #cv2.imwrite(outname + "_potentialTags.png", output)
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(255,255,0),2)
+        Coordinates.append((pts[0], pts[1], pts[2], pts[3]))
+        CroppedTags.append(img[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]])    
+    #cv2.imwrite(outname + "_foundtags.png", bkgd)
 
     return [Coordinates, CroppedTags, bkgd]
 
@@ -196,13 +175,12 @@ def drawmodel(id):
     model = np.rot90(model)*255 # I don't know why the matlab cod is like this but it is
     return model.astype(int)
 
-def drawtag(pts, cropped, bkgd, outname, a, taglist):
+def drawtag(pts, cropped, bkgd, taglist):
     grey = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY)
     #convert to black and white with Otsu's thresholding
-    ret2,bw = cv2.threshold(grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    blur = cv2.medianBlur(bw,3)
+    bw = cv2.threshold(grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
     #cv2.imwrite(outname + "_bw_" + str(a) + ".png", bw)
-    #cv2.imwrite(outname + "_blur_" + str(a) + ".png", blur)
+
     
     contours, hierarchy = cv2.findContours(bw,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     areas = np.array([cv2.contourArea(blob) for blob in contours])
@@ -236,7 +214,7 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
         return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]        
 
     #draw tag
-    thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
     #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
 
     #enlarge
@@ -246,7 +224,7 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
     TAG1 = np.full((6, 6), 255)
     for i in range(6):
         for j in range(6):
-            TAG1[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
+            TAG1[i,j] = np.mean(bwtag2[bwtag.shape[1]*i:bwtag.shape[1]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
             if TAG1[i, j] < 127:
                 TAG1[i,j] = 0
             if TAG1[i, j] > 128: #this is on purpose middle values are tricky
@@ -284,21 +262,29 @@ def drawtag(pts, cropped, bkgd, outname, a, taglist):
     dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
     tag = dst[0:edge, 0:edge]     
 
+    if np.sum(np.isnan(tag)) !=0:
+        print('not tag')
+        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]      
+
     #draw tag
-    thres,bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
     #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
 
     #enlarge
     bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
     #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
+
+    if np.sum(np.isnan(bwtag2)) !=0:
+        print('not tag')
+        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]   
     
     TAG2 = np.full((6, 6), 255)
     for i in range(6):
         for j in range(6):
-            TAG2[i,j] = np.mean(bwtag2[bwtag.shape[0]*i:bwtag.shape[0]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
+            TAG2[i,j] = np.mean(bwtag2[bwtag.shape[1]*i:bwtag.shape[1]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
             if TAG2[i, j] < 127:
                 TAG2[i,j] = 0
-            if TAG1[i, j] > 128: #this is on purpose middle values are tricky
+            if TAG2[i, j] > 128: #this is on purpose middle values are tricky
                 TAG2[i,j] = 255
     
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
@@ -353,13 +339,11 @@ def main(argv):
 
         frameData = pd.DataFrame()
         cannotRead = pd.DataFrame()
-        scores = pd.DataFrame()
-        directions = pd.DataFrame()
-        Coordinates, Cropped, bkgd = findtags(img, outname+str(f))
+        Coordinates, Cropped, bkgd = findtags(img)
         a = 0
         while a < len(Coordinates):
             print(a)
-            bkgd, row = drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
+            bkgd, row = drawtag(Coordinates[a], Cropped[a], bkgd, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
             if row[0] != 'not tag':
                 if row[0] != 'X':
                     completerow = [f] + row

@@ -18,8 +18,13 @@ def caldis(row1, row2):
 
 def remove(oneID, thres1):
     removeme = pd.DataFrame()
+    oneID = oneID.sort_values("frame", axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last', ignore_index=True)
     phydis = [caldis(oneID.loc[oneID.index[r-1]], oneID.loc[oneID.index[r]]) for r in range(1, oneID.shape[0])]
-    removeindex = [oneID.index[i] for i in range(oneID.shape[0]-1) if phydis[i] > thres1*2 and phydis[i+1] > thres1*2]
+    check = pd.concat([oneID, pd.DataFrame(phydis)], axis = 1)
+    if len(phydis) > 1:
+        removeindex = [oneID.index[i+1] for i in range(len(phydis)-2) if phydis[i] > thres1*2 and phydis[i+1] > thres1*2]
+    else:
+        removeindex = list()
     removeme = oneID.loc[removeindex]
     removeme.ID = 'X'
     input = oneID.drop(removeme.index)
@@ -152,7 +157,7 @@ def relabel(id, oneID, noID, thres1, thres2):
                 f4 = f4+1
     return oneID.append(addme, ignore_index=True)
     
-def addmissing(id, oneID, thres1, thres2):
+def addmissing(oneID, thres1, thres2):
     missing = pd.DataFrame()
     for i in range(oneID.shape[0]-1): #for each row except the last
         if 1 < oneID["frame"][i+1] - oneID["frame"][i] < thres1 and math.sqrt((oneID["centroidX"][i+1] - oneID["centroidX"][i])**2 + (oneID["centroidY"][i+1] - oneID["centroidY"][i])**2) < thres2: #threshold by time and distance
@@ -169,25 +174,26 @@ def addmissing(id, oneID, thres1, thres2):
 
     return oneID
 
-def wrangle(outname, thres1 = 30, thres2 = 10, thres3 = 100, thres4 = 30):
+def wrangle(outname, thres1 = 30, thres2 = 30, thres3 = 200, thres4 = 150):
     #split data by ID, find gaps
     raw = pd.read_csv('../Results/' + outname + '_raw.csv')
     noID = pd.read_csv('../Results/' + outname + '_noID.csv')
     IDs = set(raw.ID)
     wrangled = pd.DataFrame()
-    removed = pd.DataFrame()
     Input = pd.DataFrame()
     for id in IDs:
         print(id)
         oneID = raw[raw["ID"] == id]
-        input, removeme = remove(oneID, thres1)
+        input, removeme = remove(oneID, thres3)
         noID = noID.append(removeme)
         Input = Input.append(input)
-        
+    
+    IDs = set(Input.ID)
     for id in IDs:
         print(id)
-        oneID = relabel(id, Input, noID, thres1, thres2)
-        oneID = addmissing(id, Input, thres3, thres4)
+        oneIDInput = Input[Input["ID"] == id]
+        oneID = relabel(id, oneIDInput, noID, thres1, thres2)
+        oneID = addmissing(oneID, thres3, thres4)
 
         wrangled = wrangled.append(oneID)
     

@@ -16,7 +16,7 @@ import PythonTracking
 #code
 
 def main(argv):
-    for (dir, subdir, files) in subprocess.os.walk("../Data/Test"):
+    for (dir, subdir, files) in subprocess.os.walk("../Data/Training"):
         for file in files:
             if file != '.DS_Store':
                 print('Tracking ' + file)
@@ -32,13 +32,13 @@ def main(argv):
                 elif outname[6] == 'D':
                     taglist = [534,74,121,137,151,186,220,222,237,311,312,341,393,402,421,427,456,467,574,596,626,645,664,681,696,697,781,794,862,985,1077,1419,1846,1947,1966,2908]
                 
-                Coordinates, Cropped, bkgd = PythonTracking.findtags(img, outname)
+                Coordinates, Cropped, bkgd = PythonTracking.findtags(img)
                 a = 0
                 while a < len(Coordinates):
                     print(a)
-                    bkgd, row = PythonTracking.drawtag(Coordinates[a], Cropped[a], bkgd, outname, a, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
+                    bkgd, row = PythonTracking.drawtag(Coordinates[a], Cropped[a], bkgd, taglist) #[results[2], 'centroidX', 'centroidY', results[1], 'OneCM', results[0]]
                     a = a+1
-                cv2.imwrite('../Results/Test/' + outname + "_foundtags.png", bkgd)
+                cv2.imwrite('../Results/Training/' + outname + "_foundtags.png", bkgd)
                 print('Finished ' + file)
 
 if __name__ == "__main__": 

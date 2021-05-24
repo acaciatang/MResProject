@@ -16,39 +16,18 @@ import matplotlib.colors as mcolors
 import math
 
 #code
-def getCoor(outname, id, thres):
+def getCoor(outname, id):
     """ Reads csvfile and fills in missing data within a certain time range for specified ID. """
     csvfile = '../Results/' + outname + ".csv"
     all = pd.read_csv(csvfile)
     subset = all.loc[all["ID"] == id, ["frame", "centroidX", "centroidY"]] # read in frame, centroid coordinates
-    missing = pd.DataFrame()
-    subset = subset.append(missing, ignore_index=True)
-
-    for i in range(subset.shape[0]-1): #for each row except the last
-        if 1 < subset["frame"][i+1] - subset["frame"][i] < thres and math.sqrt((subset["centroidX"][i+1] - subset["centroidX"][i])**2 + (subset["centroidY"][i+1] - subset["centroidY"][i])**2) < 10000: #threshold by time and distance
-            addframe = pd.DataFrame(list(range(int(subset["frame"][i] + 1), int(subset["frame"][i+1]))))
-            addX = pd.DataFrame([subset["centroidX"][i] + (subset["centroidX"][i+1]-subset["centroidX"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
-            addY = pd.DataFrame([subset["centroidY"][i] + (subset["centroidY"][i+1]-subset["centroidY"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
-            addme = pd.concat([addframe, addX, addY], axis = 1)
-            missing = missing.append(addme)
-
-    if missing.shape != (0, 0):
-        missing.columns = ["frame", "centroidX", "centroidY"]    
-        subset = subset.append(missing)
-        subset = subset.sort_values("frame", axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last', ignore_index=True)
-
-    test1 = subset.frame.diff().fillna(thres*10) == 1
-    test2 = abs(subset.frame.diff(periods=-1).fillna(thres*10)) == 1
-    keep = test1|test2
-    subset['keep'] = keep
-    subset = subset.loc[subset["keep"] == True, ["frame", "centroidX", "centroidY"]]
     
     #if len(subset.index) > 0:
     #    subset.to_csv(path_or_buf = outname + "_" + str(id) + ".csv", na_rep = "NA", index = False)
     
     return subset.reset_index(drop=True)
 
-def getallCoor(outname, thres):
+def getallCoor(outname):
     """Fills in coordinates for all IDs."""
     csvfile = '../Results/' + outname + ".csv"
     all = pd.read_csv(csvfile)
@@ -56,7 +35,7 @@ def getallCoor(outname, thres):
     IDs.reset_index(level=0, inplace=True)
     IDs.columns = ["ID", "freq"]
     IDs = IDs.loc[IDs["freq"] > 1, ["ID", "freq"]]
-    allCoors = [getCoor(outname, i, thres) for i in IDs["ID"]]
+    allCoors = [getCoor(outname, i) for i in IDs["ID"]]
     allCoors = [i for i in allCoors if i.empty == False]
     
     return allCoors
@@ -141,7 +120,7 @@ def main(argv):
         filename = files[int(iter)-1]
     
     outname = os.path.splitext(os.path.basename(filename))[0]
-    allCoors = getallCoor(outname, thres = 150)
+    allCoors = getallCoor(outname)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object
