@@ -97,7 +97,7 @@ def findthres(G):
     return bws[average.index(max(average))-10]
 
 def findtags(img):
-    img = cv2.imread("../Data/Training/R1D1R1C1_00000.png")
+    #img = cv2.imread("../Data/Training/R1D1R1C1_00000.png")
 
     #separate out red channel
     R = copy.deepcopy(img[:, :, 2])
@@ -130,7 +130,7 @@ def findtags(img):
 
     # find blobs
     contours = cv2.findContours(opening,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
-    contours = [blob for blob in contours  if 2000 > cv2.contourArea(blob) > 500]
+    contours = [blob for blob in contours  if 5000 > cv2.contourArea(blob) > 800]
     cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
     #.imwrite(outname + "_BWcontour.png", bkgd)
 
@@ -155,9 +155,10 @@ def findtags(img):
     Coordinates = list()
     CroppedTags = list()
     for pts in rect2:
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),2)
-        Coordinates.append((pts[0], pts[1], pts[2], pts[3]))
-        CroppedTags.append(img[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]])    
+        if max(pts[2], pts[3]) < 90 and min(pts[2], pts[3] > 40):
+            cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),2)
+            Coordinates.append((pts[0], pts[1], pts[2], pts[3]))
+            CroppedTags.append(img[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]])    
     #cv2.imwrite(outname + "_foundtags.png", bkgd)
 
     return [Coordinates, CroppedTags, bkgd]
