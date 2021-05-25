@@ -97,26 +97,42 @@ def findthres(G):
     return bws[average.index(max(average))-10]
 
 def findtags(img):
-    for i in range(3):
-        img[:, :, i] = cv2.equalizeHist(img[:, :, i])
+    img = cv2.imread("../Data/Training/R1D1R1C1_00000.png")
+
     #separate out red channel
-    R = img[:, :, 2]
+    R = copy.deepcopy(img[:, :, 2])
     #cv2.imwrite(outname + "_eq.png", R)
     bkgd = cv2.cvtColor(R,cv2.COLOR_GRAY2RGB)
     
-    R[R > 85] = 255
-    R[R < 255] = 0
+    # create a CLAHE object (Arguments are optional).
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    cl1 = clahe.apply(R)
+    cl1[cl1 > 191] = 255
+    cl1[cl1 < 255] = 0
+    #cv2.imwrite(outname + "_bw.png", cl1)
+
     #cv2.imwrite(outname + "_bw.png", bw)
-    blur = cv2.medianBlur(R,3)
-    kernel = np.ones((4,4),np.uint8)
-    opening = cv2.morphologyEx(blur, cv2.MORPH_OPEN, kernel)
-    #cv2.imwrite(outname + "_opening.png", opening)
+    blur = cv2.medianBlur(cl1,3)
+    
+    #fill in stuff
+    contours, hierarchy = cv2.findContours(blur,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours = [blob for blob in contours if 2000 < cv2.contourArea(blob)]
+    mask = np.zeros(blur.shape,np.uint8)
+    [cv2.drawContours(mask,[c],0,255,-1) for c in contours]
+    #cv2.imwrite(outname + "_fill.png", mask)
+    mask[mask == 0] = 1
+    mask[mask == 255] = 0
+    
+    blur = mask*blur
+    kernel = np.ones((9,9),np.uint8)
+    opening = cv2.dilate(blur,kernel,iterations = 1)
+    #cv2.imwrite(outname + "_opened.png", dilation)
 
     # find blobs
-    contours, hierarchy = cv2.findContours(opening,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours = cv2.findContours(opening,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
     contours = [blob for blob in contours  if 2000 > cv2.contourArea(blob) > 500]
     cv2.drawContours(bkgd, contours, -1, (0,255,255), 1) # all closed contours plotted in yellow
-    #cv2.imwrite(outname + "_BWcontour.png", bkgd)
+    #.imwrite(outname + "_BWcontour.png", bkgd)
 
     #get white blobs
     lefts = [tuple(c[c[:,:,0].argmin()][0]) for c in contours]
@@ -139,7 +155,7 @@ def findtags(img):
     Coordinates = list()
     CroppedTags = list()
     for pts in rect2:
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(255,255,0),2)
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,0,255),2)
         Coordinates.append((pts[0], pts[1], pts[2], pts[3]))
         CroppedTags.append(img[pts[1]:pts[1]+pts[3], pts[0]:pts[0]+pts[2]])    
     #cv2.imwrite(outname + "_foundtags.png", bkgd)
@@ -198,8 +214,11 @@ def drawtag(pts, cropped, bkgd, taglist):
     edge = math.floor(min(edges))
 
     if edge == 0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]
+        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),3)
+        print('cannot read')
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
     OneCM = edge/0.3
     rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
@@ -209,9 +228,9 @@ def drawtag(pts, cropped, bkgd, taglist):
     dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
     tag = dst[0:edge, 0:edge]   
 
-    if np.sum(np.isnan(tag)) !=0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]        
+    #if np.sum(np.isnan(tag)) !=0:
+    #    print('not tag')
+    #    return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]        
 
     #draw tag
     bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
