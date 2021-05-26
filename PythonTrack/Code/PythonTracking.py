@@ -416,12 +416,14 @@ def drawtag(pts, bkgd, img, taglist):
     bw2 = np.full((close.shape[0]+20, close.shape[0]+20), 255, dtype = 'uint8')
     bw2[10:close.shape[0]+10, 10:close.shape[0]+10] = close
     
-    contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
     areas = [cv2.contourArea(blob) for blob in contours]
     contours.pop(areas.index(max(areas)))
     if len(contours) == 0:
         print('not tag')
         return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]  
+    else:
+        print(len(contours))
     areas = np.array([cv2.contourArea(blob) for blob in contours])
     largest = contours[np.where(areas == areas.max())[0][0]]
     #transform polygon (polygon should just be the tag)
