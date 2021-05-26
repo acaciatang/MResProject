@@ -85,7 +85,7 @@ def main(argv):
         if argv[1] == '.':
             files = [f for f in os.listdir('.') if f[-4:-1] == '.MP']
             for filename in files:
-                outname = os.path.splitext(os.path.basename(filename))[0]
+                outname = '../Results/' + os.path.splitext(os.path.basename(filename))[0]
                 allCoors = getallCoor(outname, thres = 10)
                 
                 cap = cv2.VideoCapture(filename)
@@ -114,18 +114,19 @@ def main(argv):
                 cv2.destroyAllWindows()
         else:
             filename = argv[1]
+            outname = '../Results/' + os.path.splitext(os.path.basename(filename))[0]
     else:
         iter = os.getenv('PBS_ARRAY_INDEX')
-        files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
+        files = ['/rds/general/user/tst116/home/Replicate1/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/Replicate1/Data')]
         filename = files[int(iter)-1]
+        outname = os.path.splitext(os.path.basename(filename))[0]
     
-    outname = os.path.splitext(os.path.basename(filename))[0]
     allCoors = getallCoor(outname)
     
     cap = cv2.VideoCapture(filename)
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('../Results/' + outname + "_tracks.mp4", fourcc, 20.0, (3840,2160))
+    out = cv2.VideoWriter(outname + "_tracks.mp4", fourcc, 20.0, (3840,2160))
 
     i=0
     while(cap.isOpened()):

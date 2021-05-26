@@ -13,11 +13,11 @@ for i = 1:(ntags^2)
     im = createPrintable16BitCode(num, 20);  
 
     imshow(im);
-    text(-25, 180, num2str(num), 'FontSize', 8, 'Rotation', 270);
+    text(-25, 0, num2str(num), 'FontSize', 8, 'Rotation', 270);
     text(185, 90, '->');  
     disp('Drew ' + i)
 
 end
 % Prints directly to a pdf (and therefore scalable) image of 100 tags
 % instead of printing to figur
-print(strcat('tags.pdf'), '-dpdf'), '-fillpage');
+print(strcat('tags.pdf'), '-dpdf', '-bestfit');

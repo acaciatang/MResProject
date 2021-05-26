@@ -8,137 +8,208 @@ __version__ = '0.0.1'
 
 #imports
 import sys
-import cv2
 import os
-import numpy as np
 import pandas as pd
 import math
 import copy
-import collections
-#import matplotlib.pyplot as plt
 
-def reshapeframe(raw, frameNum, taglist):
-    frameData = raw[raw["frame"] == frameNum]
-    iterables = [taglist, [frameNum]]
-    nested = pd.MultiIndex.from_product(iterables, names=["ID", "frame"])
-    frameSeries = pd.DataFrame(index = nested, dtype = 'float64', columns = ['X', 'Y', 'OGindex'])
-    for row in range(frameData.shape[0]):
-        print(row)
-        frameSeries.loc[(frameData.iloc[row]['ID'], frameNum), "X"] = frameData.iloc[row]['centroidX']
-        frameSeries.loc[(frameData.iloc[row]['ID'], frameNum), "Y"] = frameData.iloc[row]['centroidY']
-        frameSeries.loc[(frameData.iloc[row]['ID'], frameNum), "OGindex"] = frameData.iloc[row].name
-        
-    return frameSeries
+def caldis(row1, row2):
+    return math.sqrt((row1['centroidX']-row2['centroidX'])**2 + (row1['centroidY']-row2['centroidY'])**2)
 
-def reshape(raw, taglist):
-    reshaped = [reshapeframe(raw, float(f), taglist) for f in list(pd.unique(raw['frame']))]
-    reshaped = pd.concat(reshaped, ignore_index=False)
-    return reshaped
+def remove(oneID, thres1):
+    removeme = pd.DataFrame()
+    oneID = oneID.sort_values("frame", axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last', ignore_index=True)
+    phydis = [caldis(oneID.loc[oneID.index[r-1]], oneID.loc[oneID.index[r]]) for r in range(1, oneID.shape[0])]
+    check = pd.concat([oneID, pd.DataFrame(phydis)], axis = 1)
+    if len(phydis) > 1:
+        removeindex = [oneID.index[i+1] for i in range(len(phydis)-2) if phydis[i] > thres1*2 and phydis[i+1] > thres1*2]
+    else:
+        removeindex = list()
+    removeme = oneID.loc[removeindex]
+    removeme.ID = 'X'
+    input = oneID.drop(removeme.index)
+    return input, removeme
 
-def IDdistance(found, ID, thresf = 40, thres = 50, thres2 = 100):
-    subset = found.loc[ID]
-    frames = list(subset.index)
-    if subset.shape[0] < thresf:
-        cat = [False for i in range(subset.shape[0])]
-        return [frames, cat]
-    distance = [math.sqrt((subset.loc[frames[f], 'X'] - subset.loc[frames[f-1], 'X'])**2 + (subset.loc[frames[f], 'Y'] - subset.loc[frames[f-1], 'Y'])**2) for f in range(len(frames))]
-    distance[0] = 0
-    time = [(frames[f] - frames[f-1]) for f in range(len(frames))]
-    time[0] = 1
-    speed = [distance[f]/time[f] for f in range(len(frames))]
-    base = 0
-    cat = []
-    for i in range(len(speed)):
-        if speed[i] > thres or distance[i] > thres2:
-            base = base + 1
-        cat.append(base)
-    
-    categories = list(set(cat))
-    end = [subset.iloc[cat.index(c+1)-1] for c in categories if c != max(cat)]
-    noZero = copy.deepcopy(categories)
-    noZero.pop(0)
-    for c in noZero:
-        start = subset.iloc[cat.index(c)]
-        test = [math.sqrt((start[0] - end[i][0])**2 + (start[1] - end[i][1])**2)/(c-i) for i in range(c)]
-        minimum = test.index(min(test))
-        if test[minimum] < thres and math.sqrt((start[0] - end[minimum][0])**2 + (start[1] - end[minimum][1])**2) < thres2:
-            categories[c] = categories[test.index(min(test))]
-            cat = [categories[c] if i == c else i for i in cat]
-
-    table = collections.Counter(cat)
-    counts = [table[i] for i in range(len(table))]
-    cat = [c == counts.index(max(counts)) for c in cat] # True is good, False is sus
-    #subset['cat'] = cat
-    #subset.to_csv(path_or_buf = "324.csv", na_rep = "NA", index = True)
-            
-    return [frames, cat]
-
-def wrangle(outname, thres = 50, thres2 = 100):
-    print('Reading file...')
-    raw = pd.read_csv('../Results/' + outname + '.csv')
-    
-    if outname[6] == 'A':
-        taglist = [237,74,121,137,151,180,181,220,222,311,312,341,402,421,427,456,467,596,626,645,664,681,696,697,765,781,794,862,985,1077,1419,1846,1947,1966,2908,2915]
-    elif outname[6] == 'B':
-        taglist = [180,74,121,137,151,181,186,220,222,237,311,312,341,393,421,427,467,534,574,596,626,645,664,681,696,697,765,781,862,985,1077,1419,1846,1947,1966,2908,2915]
-    elif outname[6] == 'C':
-        taglist = [862,121,137,151,180,181,186,220,222,237,341,393,402,421,456,467,534,574,596,626,645,664,681,696,697,765,781,794,985,1077,1419,1846,1947,1966,2908,2915]
-    elif outname[6] == 'D':
-        taglist = [534,74,121,137,151,186,220,222,237,311,312,341,393,402,421,427,456,467,574,596,626,645,664,681,696,697,781,794,862,985,1077,1419,1846,1947,1966,2908]
-    
-    wrangled = copy.deepcopy(raw)
-    print('Done!')
-    print('Reshaping file...')
-    reshaped = reshape(raw, taglist)
-    print('Done!')
-    print('Wrangling...')
-    holder = copy.deepcopy(reshaped)
-    found = reshaped.dropna(axis = 0)
-    foundtags = set([i[0] for i in found.index])
-    for id in foundtags:
-        if IDdistance(found, id) != None:
-            print('ID: ' + str(id))
-            frames, cat = IDdistance(found, id)
-            if id == 'X':
-                cat = [False]*len(cat)
+def relabel(id, oneID, noID, thres1, thres2):
+    #trial 1: from top
+    addme = pd.DataFrame()
+    h = min(oneID.frame)
+    t = max(oneID.frame)
+    trial = pd.DataFrame()
+    model = oneID[oneID["frame"] == h]
+    f1 = h+1
+    while f1 < t:
+        if f1 not in list(oneID.frame):
+            candidates = noID[noID["frame"] == f1]
+            if len(candidates.index) != 0:
+                distances = [caldis(model, candidates.loc[i]) for i in candidates.index]
+                if min(distances) < thres1 and f1-h < thres2:
+                    model = copy.deepcopy(candidates.loc[candidates.index[distances.index(min(distances))]]).append(pd.Series([f1-h]))
+                    model[1] = id
+                    trial = trial.append([model], ignore_index=True)
+                    h = model['frame']
+                    f1 = f1+1
+                else:
+                    if f1-h > thres2:
+                        nextones = [i for i in oneID.frame if i > f1]
+                        h = nextones[0]
+                        model = oneID[oneID["frame"] == h]
+                        f1 = f1+1
+                    else:
+                        f1 = f1+1
             else:
-                cat = [True]*len(cat)
-            for f in range(len(frames)):
-                holder.loc[(id,frames[f]),'cat'] = cat[f]
-                print('frame: ' + str(f))
-
-    #havespeed = holder.dropna(axis = 0) # plotting for 
-    noNA = holder.dropna(axis = 0)
-    good = noNA[noNA.loc[:, 'cat']]
-    sus = noNA[noNA.loc[:, 'cat'] == False]
-    
-    for r in range(sus.shape[0]): #for each potentially mislabelled entry
-        row = sus.iloc[r]
-        previous = good.loc[(slice(None), [i for i in range(int(row.name[1]))]), slice(None)]
-        goodframes = list(set([i[0] for i in good.index]))
-        if int(row.name[1]) in goodframes:
-            current = good.loc[(slice(None), int(row.name[1])), slice(None)]
-            ids = list(set([i[0] for i in previous.index])-set([i[0] for i in current.index]))
+                f1 = f1+1
         else:
-            ids = list(set([i[0] for i in previous.index]))
-        
-        if len(ids) == 0:
-            wrangled.iat[int(row[2]), 1] = None
-        else:
-            testpts = [previous.loc[id].iloc[-1] if len(previous.loc[id].shape) > 1 else previous.loc[id] for id in ids]
-            test = [math.sqrt((row[0] - testpts[i][0])**2 + (row[1] - testpts[i][1])**2)/(row.name[1]-testpts[i].name) for i in range(len(testpts))]
-            minimum = test.index(min(test))
-            if test[minimum] < thres and math.sqrt((row[0] - testpts[minimum][0])**2 + (row[1] - testpts[minimum][1])**2) < thres2:
-                wrangled.iat[int(row[2]), 1] = ids[test.index(min(test))]
+            h = f1
+            model = oneID[oneID["frame"] == h]
+            f1 = f1+1
+    #trial 2: from bottom
+    h = min(oneID.frame)
+    t = max(oneID.frame)
+    model = oneID[oneID["frame"] == t]
+    f2 = t-1
+    while f2 > h:
+        if f2 not in list(oneID.frame):
+            candidates = noID[noID["frame"] == f2]
+            if len(candidates.index) != 0:
+                distances = [caldis(model, candidates.loc[i]) for i in candidates.index]
+                if min(distances) < thres1 and t-f2 < thres2:
+                    model = copy.deepcopy(candidates.loc[candidates.index[distances.index(min(distances))]]).append(pd.Series([abs(t-f2)]))
+                    model[1] = id
+                    trial = trial.append([model], ignore_index=True)
+                    t = model['frame']
+                    f2 = f2-1
+                else:
+                    if t-f2 > thres2:
+                        nextones = [i for i in oneID.frame if i < f2]
+                        h = nextones[-1]
+                        model = oneID[oneID["frame"] == h]
+                        f2 = f2-1
+                    else:
+                        f2 = f2-1
             else:
-                wrangled.iat[int(row[2]), 1] = None
+                f2 = f2-1
+        else:
+            t = f2
+            model = oneID[oneID["frame"] == t]
+            f2 = f2-1
+
+    #combine the two: keep one that is closer to a found tag if different
+    if len(trial.index) > 0:
+        frames = set(trial.frame)
+        for f in frames:
+            subset = trial[trial['frame'] == f]
+            if len(subset.index) == 1:
+                addme = addme.append(subset.iloc[0][0:7])
+            elif len(set(subset.centroidX)) == 1 and len(set(subset.centroidY)) == 1:
+                addme = addme.append(subset.iloc[0][0:7])
+            elif len(set(subset[0])) == 1:
+                absdiff = [abs(f-frame) for frame in oneID.frame]
+                diff = [f-frame for frame in oneID.frame]
+                test = diff[absdiff.index(min(absdiff))]
+                if test < 0:
+                    addme.append(subset.loc[max(subset.index)][0:7])
+                else:
+                    addme.append(subset.loc[min(subset.index)][0:7])
+
+            else:
+                addme = addme.append(subset.loc[subset[0].idxmin()][0:7])
+        
+    #add to top
+    h = min(oneID.frame)
+    t = max(oneID.frame)
+    if h > 0:
+        model = oneID[oneID["frame"] == h]
+        f3 = h-1
+        while f3 >= 0:
+            candidates = noID[noID["frame"] == f3]
+            if len(candidates.index) != 0:
+                distances = [caldis(model, candidates.loc[i]) for i in candidates.index]
+                if min(distances) < thres1 and f3-h < thres2:
+                    model = copy.deepcopy(candidates.loc[candidates.index[distances.index(min(distances))]])
+                    model[1] = id
+                    oneID = oneID.append([model], ignore_index=True)
+                    h = model['frame']
+                    f3 = f3-1
+                else:
+                    f3 = f3-1
+            else:
+                f3 = f3-1
+    #add to bottom    
+    h = min(oneID.frame)
+    t = max(oneID.frame)
+    if t < max(noID.frame):
+        model = oneID[oneID["frame"] == t]
+        f4 = t+1
+        while f4 <= max(noID.frame):
+            candidates = noID[noID["frame"] == f4]
+            if len(candidates.index) != 0:
+                distances = [caldis(model, candidates.loc[i]) for i in candidates.index]
+                if min(distances) < thres1 and t-f4 < thres2:
+                    model = copy.deepcopy(candidates.loc[candidates.index[distances.index(min(distances))]])
+                    model[1] = id
+                    oneID = oneID.append([model], ignore_index=True)
+                    t = model['frame']
+                    f4 = f4+1
+                else:
+                    f4 = f4+1
+            else:
+                f4 = f4+1
+    oneID = oneID.append(addme, ignore_index=True)
+    return oneID.sort_values("frame", axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last', ignore_index=True)
     
+def addmissing(oneID, thres3, thres4):
+    missing = pd.DataFrame()
+    for i in range(oneID.shape[0]-1): #for each row except the last
+        if 1 < oneID["frame"][i+1] - oneID["frame"][i] < thres3 and math.sqrt((oneID["centroidX"][i+1] - oneID["centroidX"][i])**2 + (oneID["centroidY"][i+1] - oneID["centroidY"][i])**2) < thres4: #threshold by time and distance
+            addframe = pd.DataFrame(list(range(int(oneID["frame"][i] + 1), int(oneID["frame"][i+1]))))
+            addX = pd.DataFrame([oneID["centroidX"][i] + (oneID["centroidX"][i+1]-oneID["centroidX"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
+            addY = pd.DataFrame([oneID["centroidY"][i] + (oneID["centroidY"][i+1]-oneID["centroidY"][i]) *(j+1)/len(addframe) for j in range(len(addframe))])
+            addme = pd.concat([addframe, addX, addY], axis = 1)
+            missing = missing.append(addme)
+    
+    if missing.shape != (0, 0):
+        missing.columns = ["frame", "centroidX", "centroidY"] # 0:'frame', 1:'ID', 2:'centroidX', 3:'centroidY', 4:'dir', 5:'1cm', 6:'score'  
+        missing['ID'] = oneID.ID[0]
+        missing['dir'] = 'X'
+        missing['1cm'] = 'X'
+        missing['score'] = 'X'
+
+        oneID = oneID.append(missing)
+        oneID = oneID.sort_values("frame", axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last', ignore_index=True)
+
+    return oneID
+
+def wrangle(outname, thres1 = 30, thres2 = 30, thres3 = 200, thres4 = 150):
+    #split data by ID, find gaps
+    raw = pd.read_csv(outname + '_raw.csv')
+    noID = pd.read_csv(outname + '_noID.csv')
+    IDs = set(raw.ID)
+    wrangled = pd.DataFrame()
+    Input = pd.DataFrame()
+    print('Removing problems')
+    for id in IDs:
+        oneID = raw[raw["ID"] == id]
+        input, removeme = remove(oneID, thres3)
+        noID = noID.append(removeme)
+        Input = Input.append(input)
+    
+    print('Relabelling and Joining')
+    IDs = set(Input.ID)
+    for id in IDs:
+        print(id)
+        oneIDInput = Input[Input["ID"] == id]
+        oneID = relabel(id, oneIDInput, noID, thres1, thres2)
+        oneID = addmissing(oneID, thres3, thres4)
+
+        wrangled = wrangled.append(oneID)
+    
+    wrangled = wrangled.sort_values(by=['frame'])
     wrangled = wrangled.dropna(axis = 0)
-    wrangled.to_csv(path_or_buf = '../Results/' + outname + "_final.csv", na_rep = "NA", index = True)
-    #raw.to_csv(path_or_buf = outname + "raw.csv", na_rep = "NA", index = True)
-    print("Done!")
+    wrangled.to_csv(path_or_buf = outname + ".csv", na_rep = "NA", index = False)
+    
     return 0
-            
+
 def main(argv):
     if len(sys.argv) == 2:
         #if argv[1] == '.':
@@ -148,15 +219,18 @@ def main(argv):
         #    return 0
         #else:
         filename = argv[1]
+        outname = '../Results/' + os.path.splitext(os.path.basename(filename))[0]
     else:
         iter = os.getenv('PBS_ARRAY_INDEX')
-        files = ['/rds/general/user/tst116/home/TrackBEETag/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/TrackBEETag/Data')]
+        files = ['/rds/general/user/tst116/home/Replicate1/Data' + "/" + i for i in os.listdir('/rds/general/user/tst116/home/Replicate1/Data')]
         filename = files[int(iter)-1]
-    filename = '../Data/R1D7R2A1_trimmed.MP4'
-    outname = os.path.splitext(os.path.basename(filename))[0]
+        outname = os.path.splitext(os.path.basename(filename))[0]
+    #filename = '../Data/R1D7R2A1_trimmed.MP4'
+    
     return wrangle(outname)
 
 if __name__ == "__main__": 
     """Makes sure the "main" function is called from command line"""  
     status = main(sys.argv)
     sys.exit(status)
+
