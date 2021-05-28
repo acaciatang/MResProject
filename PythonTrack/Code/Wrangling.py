@@ -17,10 +17,14 @@ def caldis(row1, row2):
     return math.sqrt((row1['centroidX']-row2['centroidX'])**2 + (row1['centroidY']-row2['centroidY'])**2)
 
 def remove(oneID, thres1):
+    if len(oneID.index) < max(oneID.frame)/100:
+        removeme = oneID
+        input = pd.DataFrame()
+        print(set(oneID.ID))
+        return input, removeme
     removeme = pd.DataFrame()
     oneID = oneID.sort_values("frame", axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last', ignore_index=True)
     phydis = [caldis(oneID.loc[oneID.index[r-1]], oneID.loc[oneID.index[r]]) for r in range(1, oneID.shape[0])]
-    check = pd.concat([oneID, pd.DataFrame(phydis)], axis = 1)
     if len(phydis) > 1:
         removeindex = [oneID.index[i+1] for i in range(len(phydis)-2) if phydis[i] > thres1*2 and phydis[i+1] > thres1*2]
     else:
@@ -195,8 +199,8 @@ def wrangle(outname, thres1 = 30, thres2 = 30, thres3 = 200, thres4 = 150):
         Input = Input.append(input)
     
     print('Relabelling and Joining')
-    IDs = set(Input.ID)
-    for id in IDs:
+    InputIDs = set(Input.ID)
+    for id in InputIDs:
         print(id)
         oneIDInput = Input[Input["ID"] == id]
         oneID = relabel(id, oneIDInput, noID, thres1, thres2)

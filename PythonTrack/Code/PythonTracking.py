@@ -61,10 +61,10 @@ def closesttosides(contour):
     Xs = contour[:, 0][:,0]
     Ys = contour[:, 0][:,1]
 
-    p1 = contour[np.argmin(Xs)]
-    p2 = contour[np.argmin(Ys)]
-    p3 = contour[np.argmax(Xs)]
-    p4 = contour[np.argmax(Ys)]
+    p1 = contour[np.argmin(Xs)][0]
+    p2 = contour[np.argmin(Ys)][0]
+    p3 = contour[np.argmax(Xs)][0]
+    p4 = contour[np.argmax(Ys)][0]
 
     return [p1, p2, p3, p4]
 
@@ -156,7 +156,7 @@ def findtags(img):
     for i in checkOverlap.index:
         pts = tuple(checkOverlap.loc[i])
         #print(pts[2]/pts[3])
-        if max(pts[2], pts[3]) < 100 and min(pts[2], pts[3]) > 20 and 0.4 < pts[2]/pts[3] < 2.5:
+        if 30 < max(pts[2], pts[3]) < 100 and min(pts[2], pts[3]) > 20 and 0.4 < pts[2]/pts[3] < 2.5:
             cropped = img[(pts[1]-2):(pts[1]+pts[3]+2), (pts[0]-2):(pts[0]+pts[2]+2)]
             if min(cropped.shape) > 0:
                 cv2.rectangle(bkgd, (pts[0],pts[1]), (pts[0]+pts[2], pts[1]+pts[3]), (0,0,255), 1)
@@ -202,7 +202,7 @@ def drawtag(pts, bkgd, img, taglist):
     #grey = cv2.bilateralFilter(grey,9,75,75)
     
     blur = cv2.blur(grey,(5,5))
-    if np.max(blur)-np.min(blur) > 50:
+    if np.max(blur)-np.min(blur) < 50:
         print('not tag')
         return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]        
     
@@ -237,12 +237,14 @@ def drawtag(pts, bkgd, img, taglist):
     edge = math.floor(min(edges))
 
     if edge == 0:
-        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
-        print('cannot read')
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
+        vertexes = closesttosides(approx)  
+        edges = [math.sqrt((vertexes[p-1][0]-vertexes[p][0])**2 + (vertexes[p-1][1]-vertexes[p][1])**2) for p in range(len(vertexes))]
+        edge = math.floor(min(edges))
 
+    if edge == 0:
+        print('not tag')
+        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]   
+    
     OneCM = edge/0.3
     rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
     pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
@@ -250,10 +252,6 @@ def drawtag(pts, bkgd, img, taglist):
     M = cv2.getAffineTransform(pts1,pts2)
     dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
     tag = dst[0:edge, 0:edge]   
-
-    #if np.sum(np.isnan(tag)) !=0:
-    #    print('not tag')
-    #    return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]        
 
     #draw tag
     bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
@@ -267,23 +265,19 @@ def drawtag(pts, bkgd, img, taglist):
     for i in range(6):
         for j in range(6):
             TAG1[i,j] = np.mean(bwtag2[bwtag.shape[1]*i:bwtag.shape[1]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
-            if TAG1[i, j] < 127:
-                TAG1[i,j] = 0
-            if TAG1[i, j] > 128: #this is on purpose middle values are tricky
-                TAG1[i,j] = 255
     
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
     results = scoretag(TAG1, taglist) # score, dir, id
-    if results[0] < 1:
+    if results[0] < 2:
         centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
         centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
         cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
         cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
         print('Found it! ID: ' + str(results[2]))
-        return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
+        return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]] 
 #trial 2
-    print('trial 3')
+    print('trial 2')
     #check for misalignment, if found, correct
     kernel = np.ones((3,3),np.uint8)
     close = cv2.morphologyEx(bwtag, cv2.MORPH_CLOSE, kernel)
@@ -293,11 +287,11 @@ def drawtag(pts, bkgd, img, taglist):
     contours = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
     allcontours = [contours[i][j] for i in range(len(contours)) for j in range(len(contours[i]))]
     if len(allcontours) == 0:
-        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
         print('cannot read')
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]] 
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']] 
     noedges = np.array([allcontours[i] for i in range(len(allcontours)) if allcontours[i][0][0] != 0 and allcontours[i][0][0] != close.shape[0]-1 and allcontours[i][0][1] != 0 and allcontours[i][0][1] != close.shape[0]-1 ])
     if len(noedges) > 0:
         left = min(noedges[:,:, 0])[0] + 1
@@ -344,81 +338,19 @@ def drawtag(pts, bkgd, img, taglist):
         for i in range(6):
             for j in range(6):
                 TAG3[i,j] = np.mean(CLOSE[close.shape[1]*i:close.shape[1]*(i+1), close.shape[0]*j:close.shape[0]*(j+1)])
-                if TAG3[i, j] < 127:
-                    TAG3[i,j] = 0
-                if TAG3[i, j] > 128: #this is on purpose middle values are tricky
-                    TAG3[i,j] = 255
 
         #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
         results = scoretag(TAG3, taglist) # score, dir, id
         if results[0] < 1:
-            centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-            centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+            centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+            centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
             cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
             cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
             cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
             print('Found it! ID: ' + str(results[2]))
             return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-#trial 3    
-    print('third try')
-    vertexes = closesttosides(approx)  
-    edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
-    edge = math.floor(min(edges))
-
-    if edge == 0:
-        vertexes = extremepoints(approx)
-        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
-        print('cannot read')
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
-
-
-    OneCM = edge/0.3
-    rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
-    pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
-    pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
-    M = cv2.getAffineTransform(pts1,pts2)
-    dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
-    tag = dst[0:edge, 0:edge]     
-
-    if np.sum(np.isnan(tag)) !=0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]      
-
-    #draw tag
-    bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
-    #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
-
-    #enlarge
-    bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
-    #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
-
-    if np.sum(np.isnan(bwtag2)) !=0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]   
-    
-    TAG2 = np.full((6, 6), 255)
-    for i in range(6):
-        for j in range(6):
-            TAG2[i,j] = np.mean(bwtag2[bwtag.shape[1]*i:bwtag.shape[1]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
-            if TAG2[i, j] < 127:
-                TAG2[i,j] = 0
-            if TAG2[i, j] > 128: #this is on purpose middle values are tricky
-                TAG2[i,j] = 255
-    
-    #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
-    results = scoretag(TAG2, taglist) # score, dir, id
-    if results[0] < 1:
-        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
-        cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
-        cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
-        print('Found it! ID: ' + str(results[2]))
-        return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-#trial 4
-    print('fourth try')
+#trial 3
+    print("third time's the charm?")
     #check for misalignment, if found, add corrected tags
     kernel = np.ones((3,3),np.uint8)
     close = cv2.morphologyEx(bwtag, cv2.MORPH_CLOSE, kernel)
@@ -462,18 +394,18 @@ def drawtag(pts, bkgd, img, taglist):
     contours = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
     areas = [cv2.contourArea(blob) for blob in contours]
     if len(areas) == 0:
-        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
         print('cannot read')
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]]
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
     contours.pop(areas.index(max(areas)))
     if len(contours) == 0:
-        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
         print('cannot read')
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]] 
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']] 
     areas = np.array([cv2.contourArea(blob) for blob in contours])
     largest = contours[np.where(areas == areas.max())[0][0]]
     #transform polygon (polygon should just be the tag)
@@ -513,16 +445,12 @@ def drawtag(pts, bkgd, img, taglist):
     for i in range(6):
         for j in range(6):
             TAG4[i,j] = np.mean(TAGadj[tag2.shape[1]*i:tag2.shape[1]*(i+1), tag2.shape[0]*j:tag2.shape[0]*(j+1)])
-            if TAG4[i, j] < 127:
-                TAG4[i,j] = 0
-            if TAG4[i, j] > 128: #this is on purpose middle values are tricky
-                TAG4[i,j] = 255
     
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
     results = scoretag(TAG4, taglist) # score, dir, id
     if results[0] < 1:
-        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
         cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
         cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
@@ -530,11 +458,11 @@ def drawtag(pts, bkgd, img, taglist):
         return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
 
 #done, still cannot read
-    centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-    centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+    centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+    centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
     cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
     print('cannot read')
-    return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]]
+    return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
 
 def main(argv):
     """ Main entry point of the program """
