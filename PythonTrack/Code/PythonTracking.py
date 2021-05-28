@@ -200,13 +200,21 @@ def drawtag(pts, bkgd, img, taglist):
     grey = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY)
     #convert to black and white with Otsu's thresholding
     #grey = cv2.bilateralFilter(grey,9,75,75)
-    bw = cv2.threshold(grey,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
-    bordervalue = (np.sum(bw[0, :]) + np.sum(bw[1:bw.shape[0]-1, 0]) + np.sum(bw[bw.shape[0]-1, :]) + np.sum(bw[1:bw.shape[0]-1, bw.shape[1]-1]))/255
-    borderlen = len(bw[0, :]) + len(bw[1:bw.shape[0]-1, 0]) + len(bw[bw.shape[0]-1, :]) + len(bw[1:bw.shape[0]-1, bw.shape[1]-1])
     
-    if bordervalue/borderlen > 0.1 and (np.sum(bw)/255)/(bw.shape[0]*bw.shape[1]) < 0.6:
+    blur = cv2.blur(grey,(5,5))
+    if np.max(blur)-np.min(blur) > 50:
         print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]
+        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]        
+    
+    #bordervalue = (np.sum(bw[0, :]) + np.sum(bw[1:bw.shape[0]-1, 0]) + np.sum(bw[bw.shape[0]-1, :]) + np.sum(bw[1:bw.shape[0]-1, bw.shape[1]-1]))/255
+    #borderlen = len(bw[0, :]) + len(bw[1:bw.shape[0]-1, 0]) + len(bw[bw.shape[0]-1, :]) + len(bw[1:bw.shape[0]-1, bw.shape[1]-1])
+    
+    #if bordervalue/borderlen > 0.1 and (np.sum(bw)/255)/(bw.shape[0]*bw.shape[1]) < 0.5:
+    #    centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+    #    centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+    #    cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
+    #    print('cannot read')
+    #    return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]]
 
     #cv2.imwrite(outname + "_area_" + str(a) + ".png", cropped)
     #cv2.imwrite(outname + "_bw_" + str(a) + ".png", bw)
@@ -266,7 +274,7 @@ def drawtag(pts, bkgd, img, taglist):
     
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
     results = scoretag(TAG1, taglist) # score, dir, id
-    if results[0] < 2:
+    if results[0] < 1:
         centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
         centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
@@ -274,65 +282,7 @@ def drawtag(pts, bkgd, img, taglist):
         cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
         print('Found it! ID: ' + str(results[2]))
         return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-#trial 2    
-    print('second try')
-    vertexes = closesttosides(approx)  
-    edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
-    edge = math.floor(min(edges))
-
-    if edge == 0:
-        vertexes = extremepoints(approx)
-        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
-        print('cannot read')
-        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
-
-
-    OneCM = edge/0.3
-    rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
-    pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
-    pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
-    M = cv2.getAffineTransform(pts1,pts2)
-    dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
-    tag = dst[0:edge, 0:edge]     
-
-    if np.sum(np.isnan(tag)) !=0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]      
-
-    #draw tag
-    bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
-    #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
-
-    #enlarge
-    bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
-    #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
-
-    if np.sum(np.isnan(bwtag2)) !=0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]   
-    
-    TAG2 = np.full((6, 6), 255)
-    for i in range(6):
-        for j in range(6):
-            TAG2[i,j] = np.mean(bwtag2[bwtag.shape[1]*i:bwtag.shape[1]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
-            if TAG2[i, j] < 127:
-                TAG2[i,j] = 0
-            if TAG2[i, j] > 128: #this is on purpose middle values are tricky
-                TAG2[i,j] = 255
-    
-    #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
-    results = scoretag(TAG2, taglist) # score, dir, id
-    if results[0] < 2:
-        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
-        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
-        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
-        cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
-        cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
-        print('Found it! ID: ' + str(results[2]))
-        return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
-#trial 3
+#trial 2
     print('trial 3')
     #check for misalignment, if found, correct
     kernel = np.ones((3,3),np.uint8)
@@ -343,8 +293,11 @@ def drawtag(pts, bkgd, img, taglist):
     contours = cv2.findContours(close,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
     allcontours = [contours[i][j] for i in range(len(contours)) for j in range(len(contours[i]))]
     if len(allcontours) == 0:
-        print('allcontours')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]  
+        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
+        print('cannot read')
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]] 
     noedges = np.array([allcontours[i] for i in range(len(allcontours)) if allcontours[i][0][0] != 0 and allcontours[i][0][0] != close.shape[0]-1 and allcontours[i][0][1] != 0 and allcontours[i][0][1] != close.shape[0]-1 ])
     if len(noedges) > 0:
         left = min(noedges[:,:, 0])[0] + 1
@@ -398,7 +351,7 @@ def drawtag(pts, bkgd, img, taglist):
 
         #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
         results = scoretag(TAG3, taglist) # score, dir, id
-        if results[0] < 2:
+        if results[0] < 1:
             centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
             centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
             cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
@@ -406,6 +359,64 @@ def drawtag(pts, bkgd, img, taglist):
             cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
             print('Found it! ID: ' + str(results[2]))
             return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
+#trial 3    
+    print('third try')
+    vertexes = closesttosides(approx)  
+    edges = [math.sqrt((vertexes[p-1][0][0]-vertexes[p][0][0])**2 + (vertexes[p-1][0][1]-vertexes[p][0][1])**2) for p in range(len(vertexes))]
+    edge = math.floor(min(edges))
+
+    if edge == 0:
+        vertexes = extremepoints(approx)
+        centroidX = statistics.mean([vertexes[0][0], vertexes[1][0], vertexes[2][0], vertexes[3][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][1], vertexes[1][1], vertexes[2][1], vertexes[3][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
+        print('cannot read')
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', 'X']]
+
+
+    OneCM = edge/0.3
+    rows,cols = cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY).shape
+    pts1 = np.float32([vertexes[0],vertexes[2],vertexes[3]])
+    pts2 = np.float32([[0,0],[edge,edge],[0,edge]])
+    M = cv2.getAffineTransform(pts1,pts2)
+    dst = cv2.warpAffine(cv2.cvtColor(cropped,cv2.COLOR_BGR2GRAY),M,(cols,rows))
+    tag = dst[0:edge, 0:edge]     
+
+    if np.sum(np.isnan(tag)) !=0:
+        print('not tag')
+        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]      
+
+    #draw tag
+    bwtag = cv2.threshold(tag,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
+    #cv2.imwrite(outname + "_bwtag_" + str(a) + ".png", bwtag)
+
+    #enlarge
+    bwtag2 = cv2.resize(bwtag, (bwtag.shape[0]*6, bwtag.shape[1]*6))
+    #cv2.imwrite(outname + "_bwtag2_" + str(a) + ".png", bwtag2)
+
+    if np.sum(np.isnan(bwtag2)) !=0:
+        print('not tag')
+        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]   
+    
+    TAG2 = np.full((6, 6), 255)
+    for i in range(6):
+        for j in range(6):
+            TAG2[i,j] = np.mean(bwtag2[bwtag.shape[1]*i:bwtag.shape[1]*(i+1), bwtag.shape[0]*j:bwtag.shape[0]*(j+1)])
+            if TAG2[i, j] < 127:
+                TAG2[i,j] = 0
+            if TAG2[i, j] > 128: #this is on purpose middle values are tricky
+                TAG2[i,j] = 255
+    
+    #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
+    results = scoretag(TAG2, taglist) # score, dir, id
+    if results[0] < 1:
+        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
+        cv2.putText(bkgd,str(results[2]),(pts[0],pts[1]), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,cv2.LINE_AA)
+        cv2.circle(bkgd,(centroidX,centroidY), 5, (255,255,0), -1)
+        print('Found it! ID: ' + str(results[2]))
+        return [bkgd, [results[2], centroidX, centroidY, results[1], OneCM, results[0]]]
 #trial 4
     print('fourth try')
     #check for misalignment, if found, add corrected tags
@@ -413,15 +424,18 @@ def drawtag(pts, bkgd, img, taglist):
     close = cv2.morphologyEx(bwtag, cv2.MORPH_CLOSE, kernel)
     #cv2.imwrite(outname + "_close_" + str(a) + ".png", close)
     
-    bw2 = np.full((close.shape[0]+20, close.shape[0]+20), 255, dtype = 'uint8')
-    bw2[10:close.shape[0]+10, 10:close.shape[0]+10] = close
+    bw2 = np.full((close.shape[0]+20, close.shape[1]+20), 255, dtype = 'uint8')
+    bw2[10:close.shape[0]+10, 10:close.shape[1]+10] = close
     
-    contours, hierarchy = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
     areas = [cv2.contourArea(blob) for blob in contours]
     contours.pop(areas.index(max(areas)))
     if len(contours) == 0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]  
+        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
+        print('cannot read')
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]]
     areas = np.array([cv2.contourArea(blob) for blob in contours])
     largest = contours[np.where(areas == areas.max())[0][0]]
     #transform polygon (polygon should just be the tag)
@@ -449,12 +463,18 @@ def drawtag(pts, bkgd, img, taglist):
     contours = cv2.findContours(bw2,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
     areas = [cv2.contourArea(blob) for blob in contours]
     if len(areas) == 0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]  
+        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
+        print('cannot read')
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]]
     contours.pop(areas.index(max(areas)))
     if len(contours) == 0:
-        print('not tag')
-        return [bkgd, ['not tag', 'not tag', 'not tag', 'not tag', 'not tag', 'not tag']]  
+        centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
+        centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
+        cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,255),2)
+        print('cannot read')
+        return [bkgd, ['X', centroidX, centroidY, 'dir', 'X', results[0]]] 
     areas = np.array([cv2.contourArea(blob) for blob in contours])
     largest = contours[np.where(areas == areas.max())[0][0]]
     #transform polygon (polygon should just be the tag)
@@ -501,7 +521,7 @@ def drawtag(pts, bkgd, img, taglist):
     
     #cv2.imwrite(outname + "_bwTAG1_" + str(a) + ".png", TAG1)
     results = scoretag(TAG4, taglist) # score, dir, id
-    if results[0] < 2:
+    if results[0] < 1:
         centroidX = statistics.mean([vertexes[0][0][0], vertexes[1][0][0], vertexes[2][0][0], vertexes[3][0][0]]) + pts[0]
         centroidY = statistics.mean([vertexes[0][0][1], vertexes[1][0][1], vertexes[2][0][1], vertexes[3][0][1]]) + pts[1]
         cv2.rectangle(bkgd,(pts[0],pts[1]),(pts[0]+pts[2], pts[1]+pts[3]),(0,255,0),3)
